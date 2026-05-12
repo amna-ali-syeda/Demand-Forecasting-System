@@ -1,0 +1,555 @@
+<!doctype html>
+<!-- Programmer: Amna Ali | File: login.html -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login – Demand Forecasting System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=Syne:wght@700;800&display=swap" rel="stylesheet" />
+    <script>
+      // If already authenticated, skip login and go to overview
+      if (sessionStorage.getItem("dfs_authenticated")) {
+        window.location.replace("index.html");
+      }
+    </script>
+    <style>
+      /* ── Reset & base ── */
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+      :root {
+        --bg:        #0b0f1a;
+        --panel:     #111827;
+        --border:    #1e2d45;
+        --accent:    #2563eb;
+        --accent-hi: #3b82f6;
+        --accent-glow: rgba(37,99,235,0.35);
+        --text:      #e2e8f0;
+        --muted:     #64748b;
+        --error:     #ef4444;
+        --success:   #22c55e;
+        --mono:      'IBM Plex Mono', monospace;
+        --display:   'Syne', sans-serif;
+      }
+
+      html, body {
+        height: 100%;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--mono);
+        overflow: hidden;
+      }
+
+      /* ── Canvas background ── */
+      #bg-canvas {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        opacity: 0.55;
+      }
+
+      /* ── Layout ── */
+      .page {
+        position: relative;
+        z-index: 1;
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 1.5rem;
+      }
+
+      .card {
+        width: 100%;
+        max-width: 420px;
+        background: var(--panel);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 2.5rem 2rem 2rem;
+        box-shadow: 0 0 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(37,99,235,0.08);
+        animation: cardIn 0.55s cubic-bezier(0.16,1,0.3,1) both;
+      }
+
+      @keyframes cardIn {
+        from { opacity: 0; transform: translateY(28px) scale(0.97); }
+        to   { opacity: 1; transform: translateY(0)   scale(1); }
+      }
+
+      /* ── Brand ── */
+      .brand {
+        text-align: center;
+        margin-bottom: 2rem;
+      }
+
+      .brand-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 52px;
+        height: 52px;
+        background: linear-gradient(135deg, var(--accent) 0%, #1d4ed8 100%);
+        border-radius: 12px;
+        margin-bottom: 1rem;
+        box-shadow: 0 0 24px var(--accent-glow);
+        animation: pulse 3s ease-in-out infinite;
+      }
+
+      @keyframes pulse {
+        0%, 100% { box-shadow: 0 0 24px var(--accent-glow); }
+        50%       { box-shadow: 0 0 40px var(--accent-glow), 0 0 60px rgba(37,99,235,0.15); }
+      }
+
+      .brand-icon svg { width: 26px; height: 26px; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+
+      .brand-title {
+        font-family: var(--display);
+        font-size: 1.35rem;
+        font-weight: 800;
+        letter-spacing: -0.02em;
+        color: #fff;
+        line-height: 1.2;
+      }
+
+      .brand-sub {
+        font-size: 0.72rem;
+        color: var(--muted);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-top: 0.25rem;
+      }
+
+      /* ── Tag line ── */
+      .tag {
+        display: inline-block;
+        font-size: 0.65rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--accent-hi);
+        background: rgba(37,99,235,0.12);
+        border: 1px solid rgba(37,99,235,0.25);
+        border-radius: 4px;
+        padding: 2px 8px;
+        margin-bottom: 1.75rem;
+      }
+
+      /* ── Form ── */
+      .form-group {
+        margin-bottom: 1.1rem;
+      }
+
+      label {
+        display: block;
+        font-size: 0.68rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 0.45rem;
+      }
+
+      .input-wrap {
+        position: relative;
+      }
+
+      /* Left-side field icon — only the direct SVG sibling, NOT the eye button */
+      .input-wrap > svg {
+        position: absolute;
+        left: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 15px;
+        height: 15px;
+        stroke: var(--muted);
+        fill: none;
+        stroke-width: 2;
+        stroke-linecap: round;
+        pointer-events: none;
+        transition: stroke 0.2s;
+      }
+
+      input[type="text"],
+      input[type="password"] {
+        width: 100%;
+        background: rgba(255,255,255,0.04);
+        border: 1px solid var(--border);
+        border-radius: 7px;
+        color: var(--text);
+        font-family: var(--mono);
+        font-size: 0.88rem;
+        padding: 0.65rem 0.75rem 0.65rem 2.4rem;
+        outline: none;
+        transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+      }
+
+      /* Extra right padding on password field so text doesn't go under the eye button */
+      input#password {
+        padding-right: 2.6rem;
+      }
+
+      input[type="text"]:focus,
+      input[type="password"]:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px var(--accent-glow);
+        background: rgba(255,255,255,0.06);
+      }
+
+      /* Highlight left icon on focus */
+      input[type="text"]:focus ~ svg,
+      input[type="password"]:focus ~ svg {
+        stroke: var(--accent-hi);
+      }
+
+      /* ── Show/hide password ── */
+      .eye-btn {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        transition: color 0.2s;
+        z-index: 2;
+      }
+      .eye-btn:hover { color: var(--text); }
+      .eye-btn svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; }
+
+      /* ── Error message ── */
+      .error-msg {
+        display: none;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        color: var(--error);
+        background: rgba(239,68,68,0.1);
+        border: 1px solid rgba(239,68,68,0.25);
+        border-radius: 6px;
+        padding: 0.5rem 0.75rem;
+        margin-bottom: 1.1rem;
+        animation: shake 0.35s cubic-bezier(0.36,0.07,0.19,0.97);
+      }
+
+      .error-msg.visible { display: flex; }
+
+      @keyframes shake {
+        10%, 90% { transform: translateX(-2px); }
+        20%, 80% { transform: translateX(3px); }
+        30%, 50%, 70% { transform: translateX(-4px); }
+        40%, 60% { transform: translateX(4px); }
+      }
+
+      /* ── Submit button ── */
+      .btn-login {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        background: linear-gradient(135deg, var(--accent) 0%, #1d4ed8 100%);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-family: var(--display);
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        cursor: pointer;
+        transition: opacity 0.2s, transform 0.15s, box-shadow 0.2s;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .btn-login::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, transparent 60%);
+      }
+
+      .btn-login:hover { opacity: 0.92; transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-glow); }
+      .btn-login:active { transform: translateY(0); opacity: 1; }
+      .btn-login:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+      /* ── Success overlay ── */
+      .success-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: var(--bg);
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: 1rem;
+        animation: fadeIn 0.3s ease;
+      }
+
+      .success-overlay.show { display: flex; }
+
+      @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+      .success-check {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        background: rgba(34,197,94,0.15);
+        border: 2px solid var(--success);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        animation: pop 0.4s cubic-bezier(0.16,1,0.3,1);
+      }
+
+      @keyframes pop { from { transform: scale(0.4); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+      .success-check svg { width: 30px; height: 30px; stroke: var(--success); fill: none; stroke-width: 2.5; stroke-linecap: round; }
+
+      .success-text {
+        font-family: var(--display);
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--success);
+      }
+
+      .success-sub {
+        font-size: 0.75rem;
+        color: var(--muted);
+        letter-spacing: 0.08em;
+      }
+
+      /* ── Footer ── */
+      .card-footer {
+        margin-top: 1.5rem;
+        text-align: center;
+        font-size: 0.65rem;
+        color: var(--muted);
+        letter-spacing: 0.06em;
+        border-top: 1px solid var(--border);
+        padding-top: 1rem;
+      }
+    </style>
+  </head>
+  <body>
+
+    <!-- Animated grid background -->
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Login card -->
+    <div class="page">
+      <div class="card">
+        <div class="brand">
+          <div class="brand-icon">
+            <!-- Chart / forecast icon -->
+            <svg viewBox="0 0 24 24">
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+            </svg>
+          </div>
+          <div class="brand-title">Demand Forecasting</div>
+          <div class="brand-sub">System&nbsp;·&nbsp;FYP 2025</div>
+        </div>
+
+        <div style="text-align:center;">
+          <span class="tag">Secure Access</span>
+        </div>
+
+        <div class="error-msg" id="errorMsg">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="errorText">Invalid username or password.</span>
+        </div>
+
+        <div class="form-group">
+          <label for="username">Username</label>
+          <div class="input-wrap">
+            <input type="text" id="username" autocomplete="username" placeholder="Enter username" />
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <div class="input-wrap">
+            <input type="password" id="password" autocomplete="current-password" placeholder="Enter password" />
+            <svg viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+            <button class="eye-btn" id="eyeBtn" type="button" aria-label="Toggle password visibility">
+              <svg id="eyeIcon" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <button class="btn-login" id="loginBtn" type="button">Sign In</button>
+
+        <div class="card-footer">Protected system &nbsp;·&nbsp; Authorised users only</div>
+      </div>
+    </div>
+
+    <!-- Success overlay -->
+    <div class="success-overlay" id="successOverlay">
+      <div class="success-check">
+        <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="success-text">Access Granted</div>
+      <div class="success-sub">Redirecting to dashboard…</div>
+    </div>
+
+    <script>
+      // ── Hardcoded credentials ────────────────────────────────────────────
+      const VALID_USERS = [
+        { username: "admin",  password: "admin123" },
+        { username: "amnaa",  password: "fyp2025"  },
+        { username: "hammad", password: "hammad123" },
+      ];
+      // ────────────────────────────────────────────────────────────────────
+
+      const loginBtn  = document.getElementById("loginBtn");
+      const errorMsg  = document.getElementById("errorMsg");
+      const errorText = document.getElementById("errorText");
+      const eyeBtn    = document.getElementById("eyeBtn");
+      const eyeIcon   = document.getElementById("eyeIcon");
+      const pwdInput  = document.getElementById("password");
+
+      // Show / hide password — toggle via attribute swap
+      eyeBtn.addEventListener("click", function (e) {
+        e.preventDefault();
+        e.stopPropagation();
+        const isHidden = pwdInput.getAttribute("type") === "password";
+        pwdInput.setAttribute("type", isHidden ? "text" : "password");
+
+        const newSvg = isHidden
+          ? '<svg id="eyeIcon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+          : '<svg id="eyeIcon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+        const oldIcon = eyeBtn.querySelector("svg");
+        oldIcon.outerHTML = newSvg;
+      });
+
+      function showError(msg) {
+        errorText.textContent = msg;
+        errorMsg.classList.add("visible");
+        errorMsg.style.animation = "none";
+        errorMsg.offsetHeight;
+        errorMsg.style.animation = "";
+      }
+
+      function clearError() {
+        errorMsg.classList.remove("visible");
+      }
+
+      function attemptLogin() {
+        const username = document.getElementById("username").value.trim();
+        const password = pwdInput.value;
+
+        clearError();
+
+        if (!username || !password) {
+          showError("Please enter both username and password.");
+          return;
+        }
+
+        const match = VALID_USERS.find(
+          u => u.username === username && u.password === password
+        );
+
+        if (match) {
+          loginBtn.disabled = true;
+          // Store a simple session flag
+          sessionStorage.setItem("dfs_authenticated", "true");
+          sessionStorage.setItem("dfs_user", username);
+
+          document.getElementById("successOverlay").classList.add("show");
+          // Redirect after a short delay
+          setTimeout(() => {
+            window.location.href = "index.html";
+          }, 1400);
+        } else {
+          showError("Invalid username or password. Please try again.");
+          pwdInput.value = "";
+          pwdInput.focus();
+        }
+      }
+
+      loginBtn.addEventListener("click", attemptLogin);
+
+      // Allow Enter key on both fields
+      document.getElementById("username").addEventListener("keydown", e => {
+        if (e.key === "Enter") document.getElementById("password").focus();
+      });
+      pwdInput.addEventListener("keydown", e => {
+        if (e.key === "Enter") attemptLogin();
+      });
+
+      // ── Animated grid background ──────────────────────────────────────
+      const canvas = document.getElementById("bg-canvas");
+      const ctx    = canvas.getContext("2d");
+      let W, H, particles = [];
+
+      function resize() {
+        W = canvas.width  = window.innerWidth;
+        H = canvas.height = window.innerHeight;
+      }
+
+      function initParticles(n) {
+        particles = [];
+        for (let i = 0; i < n; i++) {
+          particles.push({
+            x: Math.random() * W,
+            y: Math.random() * H,
+            vx: (Math.random() - 0.5) * 0.4,
+            vy: (Math.random() - 0.5) * 0.4,
+            r: Math.random() * 1.4 + 0.4,
+          });
+        }
+      }
+
+      function drawGrid() {
+        ctx.clearRect(0, 0, W, H);
+
+        // Grid lines
+        ctx.strokeStyle = "rgba(30,45,69,0.6)";
+        ctx.lineWidth = 1;
+        const step = 48;
+        for (let x = 0; x < W; x += step) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+        }
+        for (let y = 0; y < H; y += step) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
+        }
+
+        // Particles + connecting lines
+        particles.forEach(p => {
+          p.x += p.vx; p.y += p.vy;
+          if (p.x < 0) p.x = W; if (p.x > W) p.x = 0;
+          if (p.y < 0) p.y = H; if (p.y > H) p.y = 0;
+
+          ctx.beginPath();
+          ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(59,130,246,0.6)";
+          ctx.fill();
+        });
+
+        // Connect nearby particles
+        for (let i = 0; i < particles.length; i++) {
+          for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < 100) {
+              ctx.beginPath();
+              ctx.moveTo(particles[i].x, particles[i].y);
+              ctx.lineTo(particles[j].x, particles[j].y);
+              ctx.strokeStyle = `rgba(37,99,235,${0.18 * (1 - dist/100)})`;
+              ctx.lineWidth = 0.8;
+              ctx.stroke();
+            }
+          }
+        }
+
+        requestAnimationFrame(drawGrid);
+      }
+
+      window.addEventListener("resize", () => { resize(); initParticles(60); });
+      resize();
+      initParticles(60);
+      drawGrid();
+    </script>
+  </body>
+</html>

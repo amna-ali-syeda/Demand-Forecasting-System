@@ -1,0 +1,950 @@
+<!doctype html>
+<!-- Programmer: Amna Ali | File: upload.html -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script>if(!sessionStorage.getItem("dfs_authenticated")){window.location.replace("login.html");}</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Data Upload - Demand Forecasting System</title>
+    <link rel="stylesheet" href="../static/css/style.css" />
+    <style>
+      .upload-container {
+        max-width: 900px;
+        margin: 2rem auto;
+      }
+
+      .requirements-box {
+        background: linear-gradient(135deg, #e3f2fd 0%, #f0f4ff 100%);
+        border-left: 5px solid #0d47a1;
+        padding: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(13, 71, 161, 0.1);
+      }
+
+      .requirements-title {
+        color: #0d47a1;
+        font-size: 1.2rem;
+        font-weight: 700;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .required-columns {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+
+      .column-requirement {
+        background: white;
+        padding: 0.8rem;
+        border-radius: 6px;
+        border-left: 4px solid #1f77b4;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: #333;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      }
+
+      .column-requirement::before {
+        content: "✓ ";
+        color: #4caf50;
+        font-weight: bold;
+        margin-right: 0.5rem;
+      }
+
+      .upload-box {
+        border: 3px dashed #0d47a1;
+        border-radius: 8px;
+        padding: 3rem;
+        text-align: center;
+        background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+        transition: all 0.3s ease;
+        cursor: pointer;
+      }
+
+      .upload-box:hover {
+        border-color: #1f77b4;
+        background: linear-gradient(135deg, #f0f4ff 0%, #f8f9fa 100%);
+        box-shadow: 0 4px 15px rgba(13, 71, 161, 0.15);
+      }
+
+      .upload-box.dragover {
+        border-color: #1f77b4;
+        background: linear-gradient(135deg, #e3f2fd 0%, #f8f9fa 100%);
+        box-shadow: 0 8px 24px rgba(13, 71, 161, 0.25);
+      }
+
+      .upload-icon {
+        font-size: 3rem;
+        color: #0d47a1;
+        margin-bottom: 1rem;
+      }
+
+      .upload-text h3 {
+        color: #0d47a1;
+        margin: 0.5rem 0;
+      }
+
+      .upload-text p {
+        color: #666;
+        font-size: 0.9rem;
+        margin: 0.5rem 0;
+      }
+
+      .file-input {
+        display: none;
+      }
+
+      .btn-primary {
+        background: linear-gradient(135deg, #0d47a1 0%, #1f77b4 100%);
+        color: white;
+        border: none;
+        padding: 0.8rem 2rem;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 1rem;
+        font-weight: 600;
+        margin-top: 1.5rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(13, 71, 161, 0.2);
+      }
+
+      .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(13, 71, 161, 0.3);
+      }
+
+      .btn-primary:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+      }
+
+      .file-info {
+        margin-top: 2rem;
+        padding: 1.5rem;
+        background: white;
+        border-radius: 8px;
+        border-left: 5px solid #0d47a1;
+        display: none;
+      }
+
+      .file-info.show {
+        display: block;
+        animation: slideIn 0.3s ease;
+      }
+
+      @keyframes slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(-10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .file-name {
+        font-weight: 600;
+        color: #0d47a1;
+        margin-bottom: 1rem;
+        font-size: 1.1rem;
+      }
+
+      .file-preview {
+        margin-top: 1.5rem;
+      }
+
+      .preview-title {
+        font-weight: 600;
+        color: #0d47a1;
+        margin-bottom: 1rem;
+        margin-top: 1.5rem;
+      }
+
+      .column-validation {
+        margin-top: 1.5rem;
+      }
+
+      .validation-title {
+        font-weight: 600;
+        color: #0d47a1;
+        margin-bottom: 1rem;
+      }
+
+      .validation-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 0.8rem;
+      }
+
+      .validation-item {
+        padding: 0.8rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .validation-item.found {
+        background-color: #e8f5e9;
+        border-left: 4px solid #4caf50;
+        color: #1b5e20;
+      }
+
+      .validation-item.missing {
+        background-color: #ffebee;
+        border-left: 4px solid #f44336;
+        color: #b71c1c;
+      }
+
+      .validation-icon {
+        font-weight: bold;
+        font-size: 1.1rem;
+      }
+
+      .table-wrapper {
+        overflow-x: auto;
+        margin-top: 1rem;
+      }
+
+      .preview-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+      }
+
+      .preview-table th {
+        background: linear-gradient(135deg, #0d47a1 0%, #1f77b4 100%);
+        color: white;
+        padding: 0.75rem;
+        text-align: left;
+        font-weight: 600;
+      }
+
+      .preview-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #e0e0e0;
+      }
+
+      .preview-table tbody tr:hover {
+        background-color: rgba(13, 71, 161, 0.05);
+      }
+
+      .status-message {
+        padding: 1rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+        display: none;
+      }
+
+      .status-message.show {
+        display: block;
+        animation: slideIn 0.3s ease;
+      }
+
+      .status-success {
+        background-color: #e8f5e9;
+        border-left: 5px solid #4caf50;
+        color: #1b5e20;
+      }
+
+      .status-error {
+        background-color: #ffebee;
+        border-left: 5px solid #f44336;
+        color: #b71c1c;
+      }
+
+      .status-warning {
+        background-color: #fff3e0;
+        border-left: 5px solid #ff9800;
+        color: #e65100;
+      }
+
+      .upload-progress {
+        display: none;
+        margin-top: 1.5rem;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: #e0e0e0;
+        border-radius: 3px;
+        overflow: hidden;
+      }
+
+      .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #0d47a1 0%, #1f77b4 100%);
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+
+      .row-count {
+        color: #666;
+        font-size: 0.9rem;
+        margin-top: 0.5rem;
+      }
+
+      .missing-columns-warning {
+        background-color: #fff3e0;
+        border-left: 5px solid #ff9800;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-top: 1rem;
+        color: #e65100;
+      }
+
+      .missing-columns-warning strong {
+        display: block;
+        margin-bottom: 0.5rem;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-logo">Demand Forecasting System</div>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="index.html" class="nav-link">Overview</a>
+          </li>
+          <li class="nav-item">
+            <a href="predictions.html" class="nav-link">Predictions</a>
+          </li>
+          <li class="nav-item">
+            <a href="upload.html" class="nav-link">Upload Data</a>
+          </li>
+        <li class="nav-item"><a href="#" class="nav-link" onclick="sessionStorage.clear();window.location.replace('login.html');return false;" style="color:#e74c3c;">Logout</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <main class="container">
+      <div class="page-header">
+        <h1>Upload Data File</h1>
+        <p>Upload dealer data in Excel or CSV format</p>
+      </div>
+
+      <div class="upload-container">
+        <div class="chart-section" style="border-top: none; padding: 0">
+          <!-- Required Columns Information -->
+          <div class="requirements-box">
+            <div class="requirements-title">Required Column Format</div>
+            <p style="color: #555; margin: 0 0 1rem 0; font-size: 0.95rem">
+              Your data file must contain the following columns:
+            </p>
+            <div class="required-columns">
+              <div class="column-requirement">Dealer Initials</div>
+              <div class="column-requirement">Dealer Name</div>
+              <div class="column-requirement">Dealer City</div>
+              <div class="column-requirement">Job Card Date</div>
+              <div class="column-requirement">Job Card Number</div>
+              <div class="column-requirement">Part Code</div>
+              <div class="column-requirement">Part Description</div>
+              <div class="column-requirement">Category</div>
+              <div class="column-requirement">Quantity</div>
+              <div class="column-requirement">Total Price</div>
+              <div class="column-requirement">Vehicle Name</div>
+              <div class="column-requirement">Model Year</div>
+            </div>
+          </div>
+
+          <!-- Upload Area -->
+          <div class="upload-box" id="uploadBox" style="margin-top: 2rem">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">
+              <h3>Drag and drop your file here</h3>
+              <p>or click to select a file</p>
+              <p style="font-size: 0.8rem; color: #999; margin-top: 1rem">
+                Supported formats: .xlsx, .xls, .csv
+              </p>
+            </div>
+            <input
+              type="file"
+              id="fileInput"
+              class="file-input"
+              multiple
+              accept=".xlsx,.xls,.csv"
+            />
+            <button
+              class="btn-primary"
+              onclick="document.getElementById('fileInput').click()"
+            >
+              Choose File
+            </button>
+            <button
+              class="btn-primary"
+              id="retrainModelBtn"
+              style="margin-left: 0.8rem"
+              disabled
+            >
+              Train Model
+            </button>
+            <button
+              class="btn-primary"
+              id="latestProcessedBtn"
+              style="margin-left: 0.8rem"
+            >
+              Download Latest Processed File
+            </button>
+            <p
+              id="latestProcessedMeta"
+              style="font-size: 0.82rem; color: #666; margin-top: 0.8rem"
+            ></p>
+          </div>
+
+          <div class="upload-progress" id="uploadProgress">
+            <div class="progress-bar">
+              <div class="progress-fill" id="progressFill"></div>
+            </div>
+            <div
+              id="uploadLoadingText"
+              style="
+                font-size: 1.1rem;
+                font-weight: 600;
+                color: #0d47a1;
+                margin-top: 0.7rem;
+                display: none;
+              "
+            >
+              Uploading and preprocessing data, please wait...
+            </div>
+          </div>
+
+          <div class="status-message" id="statusMessage"></div>
+
+          <!-- File Info and Preview -->
+          <div class="file-info" id="fileInfo">
+            <div class="file-name" id="fileName"></div>
+            <div id="downloadArea" style="display: none; margin: 1rem 0"></div>
+
+            <div class="column-validation">
+              <div class="validation-title">Column Validation</div>
+              <div class="validation-list" id="validationList"></div>
+            </div>
+
+            <div class="row-count" id="rowCount"></div>
+
+            <button
+              class="btn-primary"
+              id="uploadBtn"
+              onclick="uploadFile()"
+              style="margin-top: 2rem"
+            >
+              ✓ Upload & Save to Datasets
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-content">
+        <p>Demand Forecasting System</p>
+      </div>
+    </footer>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx"></script>
+    <script>
+      const REQUIRED_COLUMNS = [
+        "Dealer Initials",
+        "Dealer Name",
+        "Dealer City",
+        "Job Card Date",
+        "Job Card Number",
+        "Part Code",
+        "Part Description",
+        "Category",
+        "Quantity",
+        "Total Price",
+        "Vehicle Name",
+        "Model Year",
+      ];
+
+      let selectedFiles = [];
+      let fileData = null;
+
+      const uploadBox = document.getElementById("uploadBox");
+      const fileInput = document.getElementById("fileInput");
+      const fileInfo = document.getElementById("fileInfo");
+      const statusMessage = document.getElementById("statusMessage");
+      const uploadProgress = document.getElementById("uploadProgress");
+      const uploadBtn = document.getElementById("uploadBtn");
+      const retrainModelBtn = document.getElementById("retrainModelBtn");
+      const latestProcessedBtn = document.getElementById("latestProcessedBtn");
+      const latestProcessedMeta = document.getElementById(
+        "latestProcessedMeta",
+      );
+      const uploadLoadingText = document.getElementById("uploadLoadingText");
+      const validationSection = document.querySelector(".column-validation");
+      const filePreviewSection = document.querySelector(".file-preview");
+      const rowCountSection = document.getElementById("rowCount");
+
+      let latestProcessedDownloadUrl = null;
+
+      loadPipelineState();
+
+      loadLatestProcessedFile();
+
+      latestProcessedBtn.addEventListener("click", () => {
+        if (!latestProcessedDownloadUrl) {
+          showStatus(
+            "No processed output found yet. Upload and preprocess data first.",
+            "warning",
+          );
+          return;
+        }
+        const a = document.createElement("a");
+        a.href = latestProcessedDownloadUrl;
+        a.download = "";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      });
+
+      retrainModelBtn.addEventListener("click", () => {
+        retrainModelBtn.disabled = true;
+        uploadLoadingText.style.display = "block";
+        uploadLoadingText.textContent =
+          "Training model on latest uploaded data, please wait...";
+
+        fetch("/api/train-model", { method: "POST" })
+          .then((response) => response.json())
+          .then((result) => {
+            if (result.success) {
+              showStatus("Model retrained successfully.", "success");
+              retrainModelBtn.disabled = true;
+            } else {
+              showStatus(result.error || "Model training failed.", "error");
+              retrainModelBtn.disabled = false;
+            }
+          })
+          .catch((err) => {
+            showStatus("Model training failed: " + err.message, "error");
+            retrainModelBtn.disabled = false;
+          })
+          .finally(() => {
+            uploadLoadingText.style.display = "none";
+            loadPipelineState();
+          });
+      });
+
+      function loadLatestProcessedFile() {
+        fetch("/api/latest-processed-file")
+          .then((r) => r.json())
+          .then((data) => {
+            if (!data.available) {
+              latestProcessedDownloadUrl = null;
+              latestProcessedBtn.disabled = true;
+              latestProcessedMeta.textContent =
+                "No processed file available yet.";
+              return;
+            }
+
+            latestProcessedDownloadUrl = data.downloadUrl;
+            latestProcessedBtn.disabled = false;
+            latestProcessedMeta.textContent = `Latest: ${data.filename} | Updated: ${new Date(data.updatedAt).toLocaleString()}`;
+          })
+          .catch(() => {
+            latestProcessedDownloadUrl = null;
+            latestProcessedBtn.disabled = true;
+            latestProcessedMeta.textContent =
+              "Could not load latest processed file.";
+          });
+      }
+
+      function loadPipelineState() {
+        fetch("/api/pipeline-state")
+          .then((r) => r.json())
+          .then((data) => {
+            retrainModelBtn.disabled = !data.success || !data.canTrain;
+
+            if (!data.success || !data.latestUploadAt) return;
+
+            // Restore previous-upload status banner so the user doesn't think they need to re-upload just because they navigated away.
+            const uploadedAt = new Date(Number(data.latestUploadAt)).toLocaleString();
+            const rows = Number(data.latestRowsCount || 0);
+            const status = data.latestUploadStatus || "";
+
+            if (status === "raw_uploaded_preprocessing_failed") {
+              showStatus(
+                `Previous upload (${uploadedAt}) saved to raw storage but preprocessing failed. Re-upload a corrected file.`,
+                "warning",
+              );
+            } else if (status === "preprocessed_zero_rows") {
+              showStatus(
+                `Previous upload (${uploadedAt}) preprocessed but produced 0 rows — no matching vehicle data. Re-upload corrected data.`,
+                "warning",
+              );
+            } else if (status === "preprocessed_ok") {
+              if (data.canTrain) {
+                showStatus(
+                  `Previously uploaded data is ready (${rows.toLocaleString()} rows, processed ${uploadedAt}). Click Retrain Model to train on it — no need to re-upload.`,
+                  "success",
+                );
+              } else if (data.modelReady) {
+                showStatus(
+                  `Model is already trained on the latest upload (${rows.toLocaleString()} rows, processed ${uploadedAt}). Upload new data to retrain.`,
+                  "success",
+                );
+              }
+            }
+          })
+          .catch(() => {
+            retrainModelBtn.disabled = true;
+          });
+      }
+
+      // Drag and drop events
+      uploadBox.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadBox.classList.add("dragover");
+      });
+
+      uploadBox.addEventListener("dragleave", () => {
+        uploadBox.classList.remove("dragover");
+      });
+
+      uploadBox.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadBox.classList.remove("dragover");
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          handleFiles(Array.from(files));
+        }
+      });
+
+      fileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) {
+          handleFiles(Array.from(e.target.files));
+        }
+      });
+
+      async function handleFiles(files) {
+        const validExtensions = ["xlsx", "xls", "csv"];
+        const invalidFiles = files.filter((file) => {
+          const fileExtension = file.name.split(".").pop().toLowerCase();
+          return !validExtensions.includes(fileExtension);
+        });
+
+        if (invalidFiles.length) {
+          showStatus(
+            "Some files have invalid format. Use .xlsx, .xls, or .csv only.",
+            "error",
+          );
+          return;
+        }
+
+        selectedFiles = files;
+        uploadProgress.style.display = "block";
+        document.getElementById("progressFill").style.width = "30%";
+        uploadLoadingText.style.display = "block";
+        uploadLoadingText.textContent = "Loading file, please wait...";
+
+        try {
+          const allHeaders = new Set();
+          const previewRows = [];
+
+          for (const file of files) {
+            const fileExtension = file.name.split(".").pop().toLowerCase();
+            const data = await readSingleFile(file, fileExtension);
+            data.headers.forEach((h) => allHeaders.add(h));
+            if (previewRows.length < 3) {
+              previewRows.push(...data.rows.slice(0, 3 - previewRows.length));
+            }
+          }
+
+          fileData = {
+            headers: Array.from(allHeaders),
+            rows: previewRows,
+          };
+
+          document.getElementById("progressFill").style.width = "90%";
+          displayFileInfo(
+            `${files.length} file(s) selected: ${files.map((f) => f.name).join(", ")}`,
+            fileData,
+          );
+          uploadLoadingText.style.display = "none";
+          document.getElementById("progressFill").style.width = "100%";
+          setTimeout(() => {
+            uploadProgress.style.display = "none";
+          }, 500);
+        } catch (error) {
+          showStatus("Error reading files: " + error.message, "error");
+          uploadLoadingText.style.display = "none";
+          uploadProgress.style.display = "none";
+        }
+      }
+
+      function readSingleFile(file, fileExtension) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            try {
+              let data;
+              if (fileExtension === "csv") {
+                const csv = e.target.result;
+                const lines = csv.split("\n");
+                const headers = lines[0].split(",").map((h) => h.trim());
+                const rows = [];
+                for (let i = 1; i < lines.length && rows.length < 10; i++) {
+                  if (lines[i].trim()) {
+                    const values = lines[i].split(",").map((v) => v.trim());
+                    const row = {};
+                    headers.forEach((header, index) => {
+                      row[header] = values[index] || "";
+                    });
+                    rows.push(row);
+                  }
+                }
+                data = { headers, rows };
+              } else {
+                const workbook = XLSX.read(e.target.result, {
+                  type: "array",
+                  sheetRows: 20,
+                });
+                const headerSet = new Set();
+                const previewRows = [];
+
+                workbook.SheetNames.forEach((sheetName) => {
+                  const worksheet = workbook.Sheets[sheetName];
+                  const json = XLSX.utils.sheet_to_json(worksheet, {
+                    defval: "",
+                  });
+
+                  if (json.length) {
+                    Object.keys(json[0]).forEach((h) =>
+                      headerSet.add(String(h).trim()),
+                    );
+                  }
+
+                  if (previewRows.length < 3) {
+                    previewRows.push(...json.slice(0, 3 - previewRows.length));
+                  }
+                });
+
+                data = { headers: Array.from(headerSet), rows: previewRows };
+              }
+              resolve(data);
+            } catch (err) {
+              reject(err);
+            }
+          };
+
+          if (fileExtension === "csv") {
+            reader.readAsText(file);
+          } else {
+            reader.readAsArrayBuffer(file);
+          }
+        });
+      }
+
+      function normalizeHeader(header) {
+        return String(header || "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "");
+      }
+
+      function hasRequiredColumn(headers, requiredColumn) {
+        const normalizedHeaders = headers.map(normalizeHeader);
+        const required = normalizeHeader(requiredColumn);
+
+        const aliases = {
+          dealerinitials: ["dealerinitials"],
+          dealername: ["dealername"],
+          dealercity: ["dealercity"],
+          jobcarddate: ["jobcarddate", "jobcarddate", "jobdate"],
+          jobcardnumber: ["jobcardnumber", "jobcardno", "jobcard"],
+          partcode: ["partcode"],
+          partdescription: ["partdescription", "partdesc"],
+          category: ["category"],
+          quantity: ["quantity", "qty"],
+          totalprice: ["totalprice", "price", "totalamount"],
+          vehiclename: ["vehiclename", "vehicle", "vehiclemodel"],
+          modelyear: ["modelyear", "yearmodel"],
+        };
+
+        const candidates = aliases[required] || [required];
+        return candidates.some((c) => normalizedHeaders.includes(c));
+      }
+
+      function displayFileInfo(fileName, data) {
+        document.getElementById("fileName").textContent = fileName;
+
+        // Clear any existing warning messages
+        const existingWarnings = fileInfo.querySelectorAll(
+          ".missing-columns-warning",
+        );
+        existingWarnings.forEach((warning) => warning.remove());
+
+        // Validate columns
+        const missingColumns = [];
+        const validationList = document.getElementById("validationList");
+        validationList.innerHTML = "";
+
+        let allColumnsFound = true;
+        REQUIRED_COLUMNS.forEach((col) => {
+          const found = hasRequiredColumn(data.headers, col);
+          const item = document.createElement("div");
+          item.className = `validation-item ${found ? "found" : "missing"}`;
+          item.innerHTML = `<span class="validation-icon">${
+            found ? "✓" : "✗"
+          }</span> <span>${col}</span>`;
+          validationList.appendChild(item);
+
+          if (!found) {
+            missingColumns.push(col);
+            allColumnsFound = false;
+          }
+        });
+
+        fileInfo.classList.add("show");
+
+        if (!allColumnsFound) {
+          uploadBtn.disabled = true;
+          const warning = document.createElement("div");
+          warning.className = "missing-columns-warning";
+          warning.innerHTML = `
+                    <strong>Missing Columns:</strong>
+                    ${missingColumns.join(", ")}
+                    <br><br>
+                    <small>Your file must contain all required columns. Please check your data and try again.</small>
+                `;
+          fileInfo.appendChild(warning);
+          showStatus(
+            "Some required columns are missing. Please ensure your file has all required columns.",
+            "warning",
+          );
+        } else {
+          uploadBtn.disabled = false;
+          showStatus(
+            "All required columns found! Files are ready for upload and preprocessing.",
+            "success",
+          );
+        }
+      }
+
+      function uploadFile() {
+        if (!selectedFiles.length || !fileData) {
+          showStatus("No files selected.", "error");
+          return;
+        }
+
+        uploadBtn.disabled = true;
+        retrainModelBtn.disabled = true;
+        uploadProgress.style.display = "block";
+        document.getElementById("progressFill").style.width = "10%";
+        uploadLoadingText.style.display = "block";
+        uploadLoadingText.textContent =
+          "Uploading and preprocessing data, please wait...";
+
+        const formData = new FormData();
+        selectedFiles.forEach((file) => {
+          formData.append("files", file);
+        });
+
+        fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        })
+          .then(async (response) => {
+            const payload = await response.json();
+            return { ok: response.ok, payload };
+          })
+          .then(({ ok, payload: result }) => {
+            document.getElementById("progressFill").style.width = "100%";
+            setTimeout(() => {
+              uploadProgress.style.display = "none";
+              uploadLoadingText.style.display = "none";
+            }, 500);
+
+            if (result.success) {
+              const downloadArea = document.getElementById("downloadArea");
+              downloadArea.style.display = "block";
+              downloadArea.innerHTML = `
+                <a href="${result.downloadUrl}" download class="btn-primary" style="text-decoration:none; display:inline-block; margin-top:0;">
+                  Download Processed File
+                </a>
+                <div style="margin-top:0.6rem; color:#444; font-size:0.9rem;">
+                  Final rows: ${result.rowsCount} | Files merged: ${result.uploadedFilesCount}
+                </div>
+              `;
+
+              // After successful upload, hide validation/preview and show uploaded summary only.
+              if (validationSection) validationSection.style.display = "none";
+              if (filePreviewSection) filePreviewSection.style.display = "none";
+              if (rowCountSection) rowCountSection.style.display = "none";
+              document.getElementById("fileName").textContent =
+                `Uploaded: ${(result.uploadedFiles || []).join(", ")}`;
+
+              if (Number(result.rowsCount) === 0) {
+                showStatus(
+                  "Warning: preprocessing completed but produced 0 rows. Training and predictions are unavailable for this upload.",
+                  "warning",
+                );
+              } else {
+                showStatus(
+                  `Upload and preprocessing completed! ${result.rowsCount} rows in final dataset. Click Retrain Model to train on this upload.`,
+                  "success",
+                );
+              }
+
+              loadLatestProcessedFile();
+              retrainModelBtn.disabled = !result.canTrain;
+              loadPipelineState();
+
+              // Auto-download latest processed file after successful upload.
+              if (result.downloadUrl && Number(result.rowsCount) > 0) {
+                const autoLink = document.createElement("a");
+                autoLink.href = result.downloadUrl;
+                autoLink.download = "";
+                document.body.appendChild(autoLink);
+                autoLink.click();
+                autoLink.remove();
+              }
+
+              uploadBtn.disabled = false;
+            } else {
+              if (
+                result.rawUploadSaved &&
+                result.warningCode === "RAW_UPLOAD_PREPROCESSING_FAILED"
+              ) {
+                showStatus(
+                  `Uploaded to raw storage, preprocessing failed. ${result.details || "Please review the file and try again."}`,
+                  "warning",
+                );
+              } else {
+                showStatus(`Upload failed: ${result.error}`, "error");
+              }
+              uploadBtn.disabled = false;
+              retrainModelBtn.disabled = true;
+            }
+
+            if (!ok && !result.success) {
+              loadPipelineState();
+            }
+          })
+          .catch((error) => {
+            uploadProgress.style.display = "none";
+            uploadLoadingText.style.display = "none";
+            showStatus(`Error uploading file: ${error.message}`, "error");
+            uploadBtn.disabled = false;
+            retrainModelBtn.disabled = true;
+          });
+      }
+
+      function showStatus(message, type) {
+        statusMessage.textContent = message;
+        statusMessage.className = `status-message show status-${type}`;
+      }
+    </script>
+  </body>
+</html>

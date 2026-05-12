@@ -1,0 +1,36 @@
+# Node.js dependencies
+node_modules/
+
+# Python virtual environments and cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+ENV/
+
+# Runtime and generated output
+datasets/uploaded_raw/
+datasets/preprocessed_without_weather/
+datasets/feature_engineered_dataset.csv
+datasets/pipeline_state.json
+metrics/
+modelPredictions/
+models/
+visuals/*.png
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Editor folders
+.vscode/

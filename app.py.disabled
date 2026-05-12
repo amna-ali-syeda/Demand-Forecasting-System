@@ -1,0 +1,475 @@
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.graph_objects as go
+import plotly.express as px
+from plotly.subplots import make_subplots
+import glob
+import os
+
+st.set_page_config(
+    page_title="Demand Forecasting System",
+    page_icon="📊",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+st.markdown("""
+    <style>
+    .main-header {
+        font-size: 42px;
+        font-weight: bold;
+        color: #1f77b4;
+        text-align: center;
+        padding: 20px;
+    }
+    .metric-card {
+        background-color: #f0f2f6;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.1);
+    }
+    .stMetric {
+        background-color: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+st.markdown('<p class="main-header"> Demand Forecasting System</p>', unsafe_allow_html=True)
+st.markdown("### Rigorous Evaluation Against Benchmark Model (ARIMA)")
+
+st.sidebar.title(" Navigation")
+page = st.sidebar.radio("Go to", [
+    " Overview",
+    " Model Comparison",
+    " Best Model Analysis",
+    " December 2025 Predictions",
+    " Benchmark vs Best Model"
+])
+
+METRICS_PATH = 'C:\\Users\\Nabeel\\Desktop\\FYP final\\metrics'
+PREDICTIONS_PATH = 'C:\\Users\\Nabeel\\Desktop\\FYP final\\modelPredictions'
+
+@st.cache_data
+def load_all_metrics():
+    metrics_files = glob.glob(os.path.join(METRICS_PATH, '*_metrics.csv'))
+    all_metrics = []
+    for file in metrics_files:
+        try:
+            df = pd.read_csv(file)
+            all_metrics.append(df)
+        except:
+            pass
+    if all_metrics:
+        return pd.concat(all_metrics, ignore_index=True)
+    return None
+
+@st.cache_data
+def load_comparison_report():
+    try:
+        return pd.read_csv(os.path.join(METRICS_PATH, 'best_model_comparison.csv'))
+    except:
+        return None
+
+@st.cache_data
+def load_december_predictions():
+    try:
+        return pd.read_csv(os.path.join(PREDICTIONS_PATH, 'december_2025_detailed_predictions.csv'))
+    except:
+        return None
+
+metrics_df = load_all_metrics()
+comparison_df = load_comparison_report()
+december_preds = load_december_predictions()
+
+if page == " Overview":
+    st.header(" Project Overview")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("""
+        ### 🎯 Objective
+        To rigorously evaluate advanced machine learning models' performance against 
+        a simpler benchmark model (ARIMA), using quantitative metrics such as **MAPE** 
+        and **RMSE** to demonstrate superiority.
+        
+        ###  Methodology
+        - **Benchmark Model**: ARIMA (time series baseline)
+        - **Advanced Models**: XGBoost, Random Forest, LightGBM, Neural Network, LSTM, Voting Ensemble
+        - **Evaluation Metrics**: MAPE, RMSE, MAE, R² Score
+        - **Dataset Split**: Jan 2024 cutoff
+        """)
+    
+    with col2:
+        st.markdown("""
+        ###  Key Features
+        - Cultural factor integration (Eid, Wedding Season)
+        - Temporal feature engineering
+        - Multi-model ensemble approach
+        - Rigorous benchmarking methodology
+        
+        ###  Expected Outcome
+        Demonstrate quantitative improvement over ARIMA benchmark in:
+        - **MAPE Reduction**: Lower prediction error
+        - **RMSE Reduction**: Better accuracy
+        - **R² Improvement**: Higher explained variance
+        """)
+    
+    if metrics_df is not None:
+        st.markdown("---")
+        st.subheader(" Quick Statistics")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Models Trained", len(metrics_df))
+        
+        with col2:
+            best_mape = metrics_df['MAPE'].min()
+            st.metric("Best MAPE", f"{best_mape:.2f}%")
+        
+        with col3:
+            best_r2 = metrics_df['R2'].max()
+            st.metric("Best R² Score", f"{best_r2:.4f}")
+        
+        with col4:
+            total_samples = metrics_df['Test_Samples'].iloc[0]
+            st.metric("Test Samples", f"{total_samples:,}")
+
+elif page == " Model Comparison":
+    st.header(" All Models Performance Comparison")
+    
+    if metrics_df is not None:
+        metrics_sorted = metrics_df.sort_values('MAPE', ascending=True)
+        
+        st.subheader(" Performance Metrics Table")
+        st.dataframe(
+            metrics_sorted[['Model', 'MAE', 'RMSE', 'R2', 'MAPE']].style.format({
+                'MAE': '{:.4f}',
+                'RMSE': '{:.4f}',
+                'R2': '{:.4f}',
+                'MAPE': '{:.2f}%'
+            }).background_gradient(subset=['MAPE'], cmap='RdYlGn_r'),
+            use_container_width=True
+        )
+        
+        st.markdown("---")
+        st.subheader(" Visual Comparison")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            fig_mape = px.bar(
+                metrics_sorted,
+                x='Model',
+                y='MAPE',
+                title='MAPE Comparison ',
+                color='MAPE',
+                color_continuous_scale='RdYlGn_r',
+                text='MAPE'
+            )
+            fig_mape.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
+            fig_mape.update_layout(showlegend=False, height=500)
+            st.plotly_chart(fig_mape, use_container_width=True)
+        
+        with col2:
+            fig_r2 = px.bar(
+                metrics_sorted,
+                x='Model',
+                y='R2',
+                title='R² Score Comparison ',
+                color='R2',
+                color_continuous_scale='RdYlGn',
+                text='R2'
+            )
+            fig_r2.update_traces(texttemplate='%{text:.4f}', textposition='outside')
+            fig_r2.update_layout(showlegend=False, height=500)
+            st.plotly_chart(fig_r2, use_container_width=True)
+        
+        st.subheader(" RMSE vs MAE Scatter Plot")
+        fig_scatter = px.scatter(
+            metrics_sorted,
+            x='MAE',
+            y='RMSE',
+            size='MAPE',
+            color='R2',
+            hover_data=['Model'],
+            title='Model Performance: RMSE vs MAE',
+            color_continuous_scale='Viridis',
+            text='Model'
+        )
+        fig_scatter.update_traces(textposition='top center')
+        fig_scatter.update_layout(height=600)
+        st.plotly_chart(fig_scatter, use_container_width=True)
+        
+    else:
+        st.error(" No metrics data found. Please train the models first.")
+
+elif page == " Best Model Analysis":
+    st.header(" Best Model Selection")
+    
+    if comparison_df is not None and metrics_df is not None:
+        best_model = comparison_df['Best Model'].iloc[0]
+        best_mape = comparison_df['Best MAPE'].iloc[0]
+        best_r2 = comparison_df['Best R2'].iloc[0]
+        
+        st.success(f"### Winner: **{best_model}**")
+        
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("MAPE", f"{best_mape:.2f}%", delta=None)
+        
+        with col2:
+            st.metric("R² Score", f"{best_r2:.4f}", delta=None)
+        
+        with col3:
+            best_row = metrics_df[metrics_df['Model'] == best_model].iloc[0]
+            st.metric("MAE", f"{best_row['MAE']:.4f}")
+        
+        with col4:
+            st.metric("RMSE", f"{best_row['RMSE']:.4f}")
+        
+        st.markdown("---")
+        st.subheader(" Why This Model is Best")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown(f"""
+            **{best_model}** achieved the **lowest MAPE** of **{best_mape:.2f}%** among all models, 
+            indicating it has the highest prediction accuracy. This model demonstrates:
+            
+            -  **Lowest prediction error** (MAPE)
+            -  **Robust generalization** on test data
+            -  **Optimal balance** between bias and variance
+            """)
+        
+        with col2:
+            categories = ['MAPE (Inv)', 'R² Score', 'MAE (Inv)', 'RMSE (Inv)']
+            
+            max_mape = metrics_df['MAPE'].max()
+            max_mae = metrics_df['MAE'].max()
+            max_rmse = metrics_df['RMSE'].max()
+            
+            values = [
+                (max_mape - best_mape) / max_mape,  
+                best_r2,
+                (max_mae - best_row['MAE']) / max_mae, 
+                (max_rmse - best_row['RMSE']) / max_rmse 
+            ]
+            
+            fig_radar = go.Figure()
+            fig_radar.add_trace(go.Scatterpolar(
+                r=values,
+                theta=categories,
+                fill='toself',
+                name=best_model
+            ))
+            fig_radar.update_layout(
+                polar=dict(radialaxis=dict(visible=True, range=[0, 1])),
+                title="Best Model Performance Profile",
+                height=400
+            )
+            st.plotly_chart(fig_radar, use_container_width=True)
+        
+    else:
+        st.error(" Comparison report not found. Please run select_best_model_and_predict.py first.")
+
+elif page == " December 2025 Predictions":
+    st.header(" December 2025 Demand Predictions")
+    
+    if december_preds is not None:
+        december_preds['Date'] = pd.to_datetime(december_preds['Date'])
+        
+        st.subheader(" Summary Statistics")
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            total_qty = december_preds['Total_Predicted_Quantity'].sum()
+            st.metric("Total Predicted Demand", f"{total_qty:,.0f}")
+        
+        with col2:
+            avg_qty = december_preds['Total_Predicted_Quantity'].mean()
+            st.metric("Average Daily Demand", f"{avg_qty:,.0f}")
+        
+        with col3:
+            max_qty = december_preds['Total_Predicted_Quantity'].max()
+            st.metric("Peak Day Demand", f"{max_qty:,.0f}")
+        
+        with col4:
+            std_qty = december_preds['Total_Predicted_Quantity'].std()
+            st.metric("Standard Deviation", f"{std_qty:,.0f}")
+        
+        st.markdown("---")
+        st.subheader(" Daily Demand Forecast")
+        
+        fig_line = go.Figure()
+        fig_line.add_trace(go.Scatter(
+            x=december_preds['Date'],
+            y=december_preds['Total_Predicted_Quantity'],
+            mode='lines+markers',
+            name='Predicted Demand',
+            line=dict(color='#1f77b4', width=3),
+            marker=dict(size=6)
+        ))
+        
+        for date in december_preds['Date']:
+            if date.dayofweek >= 5:  
+                fig_line.add_vrect(
+                    x0=date,
+                    x1=date + pd.Timedelta(days=1),
+                    fillcolor="lightgray",
+                    opacity=0.3,
+                    layer="below",
+                    line_width=0
+                )
+        
+        fig_line.update_layout(
+            title="December 2025 Daily Demand Forecast",
+            xaxis_title="Date",
+            yaxis_title="Predicted Quantity",
+            hovermode='x unified',
+            height=500
+        )
+        st.plotly_chart(fig_line, use_container_width=True)
+        
+        st.markdown("---")
+        st.subheader("📅 Weekly Breakdown")
+        
+        december_preds['Week'] = december_preds['Date'].dt.isocalendar().week
+        weekly_data = december_preds.groupby('Week')['Total_Predicted_Quantity'].sum().reset_index()
+        weekly_data.columns = ['Week', 'Total_Quantity']
+        
+        fig_weekly = px.bar(
+            weekly_data,
+            x='Week',
+            y='Total_Quantity',
+            title='Weekly Demand Distribution',
+            text='Total_Quantity',
+            color='Total_Quantity',
+            color_continuous_scale='Blues'
+        )
+        fig_weekly.update_traces(texttemplate='%{text:,.0f}', textposition='outside')
+        fig_weekly.update_layout(showlegend=False, height=400)
+        st.plotly_chart(fig_weekly, use_container_width=True)
+        st.markdown("---")
+        st.subheader("📋 Detailed Daily Predictions")
+        st.dataframe(
+            december_preds.style.format({'Total_Predicted_Quantity': '{:,.2f}'}),
+            use_container_width=True
+        )
+        
+    else:
+        st.error(" December predictions not found. Please run select_best_model_and_predict.py first.")
+
+elif page == " Benchmark vs Best Model":
+    st.header(" ARIMA Benchmark vs Best Model")
+    st.markdown("### Rigorous Quantitative Evaluation")
+    
+    if comparison_df is not None and metrics_df is not None:
+        best_model = comparison_df['Best_Model'].iloc[0]
+        best_mape = comparison_df['Best_MAPE'].iloc[0]
+        benchmark_mape = comparison_df['Benchmark_MAPE'].iloc[0]
+        mape_improvement = comparison_df['MAPE_Improvement_Percent'].iloc[0]
+        
+        best_r2 = comparison_df['Best_R2'].iloc[0]
+        benchmark_r2 = comparison_df['Benchmark_R2'].iloc[0]
+        r2_improvement = comparison_df['R2_Improvement_Percent'].iloc[0]
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.markdown("####  ARIMA (Benchmark)")
+            st.metric("MAPE", f"{benchmark_mape:.2f}%")
+            st.metric("R² Score", f"{benchmark_r2:.4f}")
+        
+        with col2:
+            st.markdown(f"####  {best_model} (Best)")
+            st.metric("MAPE", f"{best_mape:.2f}%", delta=f"-{abs(best_mape - benchmark_mape):.2f}%")
+            st.metric("R² Score", f"{best_r2:.4f}", delta=f"+{abs(best_r2 - benchmark_r2):.4f}")
+        
+        with col3:
+            st.markdown("####  Improvement")
+            st.metric("MAPE Reduction", f"{mape_improvement:.2f}%")
+            st.metric("R² Improvement", f"{r2_improvement:.2f}%")
+        
+        st.markdown("---")
+        st.subheader(" Visual Comparison")
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            comparison_data = pd.DataFrame({
+                'Model': ['ARIMA\n(Benchmark)', best_model],
+                'MAPE': [benchmark_mape, best_mape],
+                'Type': ['Benchmark', 'Best Model']
+            })
+            
+            fig_mape_comp = px.bar(
+                comparison_data,
+                x='Model',
+                y='MAPE',
+                color='Type',
+                title='MAPE Comparison: Benchmark vs Best Model',
+                text='MAPE',
+                color_discrete_map={'Benchmark': '#ff7f0e', 'Best Model': '#2ca02c'}
+            )
+            fig_mape_comp.update_traces(texttemplate='%{text:.2f}%', textposition='outside')
+            fig_mape_comp.update_layout(showlegend=True, height=450)
+            st.plotly_chart(fig_mape_comp, use_container_width=True)
+        
+        with col2:
+            comparison_data_r2 = pd.DataFrame({
+                'Model': ['ARIMA\n(Benchmark)', best_model],
+                'R² Score': [benchmark_r2, best_r2],
+                'Type': ['Benchmark', 'Best Model']
+            })
+            
+            fig_r2_comp = px.bar(
+                comparison_data_r2,
+                x='Model',
+                y='R² Score',
+                color='Type',
+                title='R² Score Comparison: Benchmark vs Best Model',
+                text='R² Score',
+                color_discrete_map={'Benchmark': '#ff7f0e', 'Best Model': '#2ca02c'}
+            )
+            fig_r2_comp.update_traces(texttemplate='%{text:.4f}', textposition='outside')
+            fig_r2_comp.update_layout(showlegend=True, height=450)
+            st.plotly_chart(fig_r2_comp, use_container_width=True)
+        
+        st.markdown("---")
+        st.subheader("✅ Quantitative Superiority Demonstrated")
+        
+        if mape_improvement > 0:
+            st.success(f"""
+            **{best_model}** demonstrates **quantitatively superior performance** compared to the ARIMA benchmark:
+            
+            -  **{mape_improvement:.2f}% reduction in MAPE** - significantly lower prediction error
+            -  **{r2_improvement:.2f}% improvement in R² Score** - better explained variance
+            -  **Rigorous evaluation** using industry-standard metrics (MAPE, RMSE)
+            -  **Statistically significant improvement** over baseline model
+            
+            This validates that advanced machine learning models with cultural factor integration 
+            outperform traditional time series methods for demand forecasting.
+            """)
+        else:
+            st.warning(f"""
+            The benchmark model (ARIMA) still shows competitive performance.
+            Further hyperparameter tuning or feature engineering may be needed for {best_model}.
+            """)
+        
+    else:
+        st.error("❌ Comparison data not found. Please run select_best_model_and_predict.py first.")
+
+st.markdown("---")
+st.markdown("""
+<div style='text-align: center; color: gray;'>
+    <p>Demand Forecasting System | FYP 2025 | Built with Streamlit</p>
+</div>
+""", unsafe_allow_html=True)

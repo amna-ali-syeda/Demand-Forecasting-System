@@ -1,0 +1,41 @@
+Dealer Initials,Dealer Name,Dealer City,Job Card Date,Job Card Number,Part Code,Part Description,Category,Quantity,Total Price,Vehicle Name,Model Year
+AI,Ahmed Industries,Karachi,2025-01-01,JC001,P001,Brake Pad Set,Brakes,2,5500,Toyota Corolla,2022
+AI,Ahmed Industries,Karachi,2025-01-02,JC002,P002,Air Filter,Engine,1,1200,Toyota Corolla,2022
+AI,Ahmed Industries,Karachi,2025-01-03,JC003,P003,Oil Filter,Engine,1,800,Honda Civic,2021
+BW,Bright Workshop,Lahore,2025-01-04,JC004,P004,Spark Plugs Set,Engine,4,2400,Honda Civic,2021
+BW,Bright Workshop,Lahore,2025-01-05,JC005,P005,Steering Tie Rod,Suspension,2,6000,Honda Civic,2021
+BW,Bright Workshop,Lahore,2025-01-06,JC006,P006,Front Brake Disc,Brakes,2,8000,Honda City,2020
+CK,Capital Karz,Islamabad,2025-01-07,JC007,P007,Radiator Fan,Cooling,1,4500,Honda City,2020
+CK,Capital Karz,Islamabad,2025-01-08,JC008,P008,Battery 60AH,Electrical,1,12000,Honda City,2020
+CK,Capital Karz,Islamabad,2025-01-09,JC009,P009,Alternator,Electrical,1,18000,Suzuki Alto,2019
+DM,Desert Motors,Quetta,2025-01-10,JC010,P010,Water Pump,Cooling,1,3500,Suzuki Alto,2019
+DM,Desert Motors,Quetta,2025-01-11,JC011,P011,Fuel Pump,Fuel,1,5500,Suzuki Alto,2019
+DM,Desert Motors,Quetta,2025-01-12,JC012,P012,Suspension Spring,Suspension,2,7000,Hyundai Elantra,2023
+EG,Elite Garage,Peshawar,2025-01-13,JC013,P013,Transmission Fluid,Transmission,5,4500,Hyundai Elantra,2023
+EG,Elite Garage,Peshawar,2025-01-14,JC014,P014,Engine Oil 5L,Maintenance,3,6900,Hyundai Elantra,2023
+EG,Elite Garage,Peshawar,2025-01-15,JC015,P015,Coolant 1L,Cooling,4,2000,Kia Sportage,2022
+FX,Fab Exchange,Rawalpindi,2025-01-16,JC016,P016,Cabin Air Filter,Climate,1,1500,Kia Sportage,2022
+FX,Fab Exchange,Rawalpindi,2025-01-17,JC017,P017,Door Handle,Exterior,2,3000,Kia Sportage,2022
+FX,Fab Exchange,Rawalpindi,2025-01-18,JC018,P018,Window Regulator,Electrical,1,4000,Nissan Altima,2021
+GR,Grand Repairs,Multan,2025-01-19,JC019,P019,Wheel Bearing,Suspension,2,5500,Nissan Altima,2021
+GR,Grand Repairs,Multan,2025-01-20,JC020,P020,Exhaust Pipe,Exhaust,1,6500,Nissan Altima,2021
+GR,Grand Repairs,Multan,2025-01-21,JC021,P021,Bumper Assembly,Exterior,1,8000,Mazda CX-5,2023
+HS,Harmony Service,Faisalabad,2025-01-22,JC022,P022,Side Mirror,Exterior,2,4000,Mazda CX-5,2023
+HS,Harmony Service,Faisalabad,2025-01-23,JC023,P023,Shock Absorber,Suspension,2,10000,Mazda CX-5,2023
+HS,Harmony Service,Faisalabad,2025-01-24,JC024,P024,Headlight Assembly,Lighting,1,7500,Toyota Prius,2022
+IT,Innovation Tech,Sialkot,2025-01-25,JC025,P025,Taillight Unit,Lighting,2,3500,Toyota Prius,2022
+IT,Innovation Tech,Sialkot,2025-01-26,JC026,P026,Dashboard Mat,Interior,1,1200,Toyota Prius,2022
+IT,Innovation Tech,Sialkot,2025-01-27,JC027,P027,Seat Cover,Interior,4,8000,Honda Accord,2021
+JM,Journey Motors,Gujranwala,2025-01-28,JC028,P028,Floor Mat Set,Interior,1,2500,Honda Accord,2021
+JM,Journey Motors,Gujranwala,2025-01-29,JC029,P029,Trunk Lining,Interior,1,1500,Honda Accord,2021
+JM,Journey Motors,Gujranwala,2025-01-30,JC030,P030,Windshield Wiper,Maintenance,2,1800,Suzuki Swift,2020
+AI,Ahmed Industries,Karachi,2025-02-01,JC031,P031,Brake Fluid,Brakes,2,1600,Suzuki Swift,2020
+BW,Bright Workshop,Lahore,2025-02-02,JC032,P032,Transmission Oil,Transmission,3,4800,Suzuki Swift,2020
+CK,Capital Karz,Islamabad,2025-02-03,JC033,P033,Spark Plug Cable,Engine,1,2000,Chevrolet Cruze,2019
+DM,Desert Motors,Quetta,2025-02-04,JC034,P034,Fuel Filter,Fuel,1,1500,Chevrolet Cruze,2019
+EG,Elite Garage,Peshawar,2025-02-05,JC035,P035,AC Compressor,Climate,1,22000,Chevrolet Cruze,2019
+FX,Fab Exchange,Rawalpindi,2025-02-06,JC036,P036,Condenser Fan,Climate,1,6500,Daihatsu Mira,2018
+GR,Grand Repairs,Multan,2025-02-07,JC037,P037,Evaporator Core,Climate,1,12000,Daihatsu Mira,2018
+HS,Harmony Service,Faisalabad,2025-02-08,JC038,P038,Compressor Clutch,Climate,1,8000,Daihatsu Mira,2018
+IT,Innovation Tech,Sialkot,2025-02-09,JC039,P039,Water Hose,Cooling,3,900,Toyota Yaris,2021
+JM,Journey Motors,Gujranwala,2025-02-10,JC040,P040,Radiator Core,Cooling,1,15000,Toyota Yaris,2021

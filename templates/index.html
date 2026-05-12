@@ -1,0 +1,412 @@
+<!doctype html>
+<!-- Programmer: Amna Ali | File: index.html -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script>if(!sessionStorage.getItem("dfs_authenticated")){window.location.replace("login.html");}</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Demand Forecasting System</title>
+    <link rel="stylesheet" href="../static/css/style.css" />
+    <script src="../static/plotly.min.js"></script>
+    <style>
+      .overview-state-card {
+        text-align: center;
+        padding: 4rem 2rem;
+        border-radius: 12px;
+        margin-top: 1.5rem;
+      }
+      .overview-state-card .state-icon { font-size: 3.5rem; margin-bottom: 1rem; }
+      .overview-state-card h2 { margin-bottom: 0.75rem; }
+      .overview-state-card p { color: #555; font-size: 1.05rem; margin-bottom: 1.75rem; }
+      .state-cta {
+        display: inline-block;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 600;
+        font-size: 1rem;
+      }
+      .summary-stat { display: flex; flex-direction: column; }
+      .chart-note { color: #666; font-size: 0.92rem; margin: 0 0 0.75rem; }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-logo">Demand Forecasting System</div>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="index.html" class="nav-link">Overview</a>
+          </li>
+          <li class="nav-item">
+            <a href="predictions.html" class="nav-link">Predictions</a>
+          </li>
+          <li class="nav-item">
+            <a href="upload.html" class="nav-link">Upload Data</a>
+          </li>
+        <li class="nav-item"><a href="#" class="nav-link" onclick="sessionStorage.clear();window.location.replace('login.html');return false;" style="color:#e74c3c;">Logout</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <main class="container">
+      <div class="page-header">
+        <h1>Dataset Overview</h1>
+        <p id="overviewSubtitle" style="color:#555;">Checking data status...</p>
+      </div>
+
+      <!-- No upload state -->
+      <div id="noUploadState" style="display:none;">
+        <div class="overview-state-card" style="background:#f8f9fa; border:1px solid #dee2e6;">
+          <div class="state-icon">📁</div>
+          <h2 style="color:#0d47a1;">No Data Uploaded Yet</h2>
+          <p>Upload your dataset to see data visualisations and insights about demand patterns, cultural effects, and weather integration.</p>
+          <a href="upload.html" class="state-cta" style="background:#0d47a1; color:#fff;">Go to Upload Data</a>
+        </div>
+      </div>
+
+      <!-- Preprocessed but model not trained state -->
+      <div id="needsTrainingState" style="display:none;">
+        <div class="overview-state-card" style="background:#fff8e1; border:1px solid #f0ad4e;">
+          <div class="state-icon">🔄</div>
+          <h2 style="color:#7a4b00;">Data Ready — Model Not Trained</h2>
+          <p>Your data has been preprocessed. Train the model on the Upload Data page to unlock full visualisations including the feature correlation matrix.</p>
+          <a href="upload.html" class="state-cta" style="background:#e67e22; color:#fff;">Go to Upload Data</a>
+        </div>
+      </div>
+
+      <!-- Data available state -->
+      <div id="dataState" style="display:none;">
+
+        <!-- Summary stat cards -->
+        <div class="stats-grid" id="summaryStats" style="margin-bottom:1.5rem;"></div>
+
+        <!-- Correlation heatmap — full width -->
+        <section class="chart-section">
+          <h2>Feature Correlation Matrix</h2>
+          <p class="chart-note">
+            Pairwise Pearson correlation between all engineered features and demand (Quantity).
+            Deep blue = strong positive correlation, deep red = strong negative.
+            The last row/column shows each feature's direct correlation with demand.
+          </p>
+          <div id="correlationChart" style="min-height:560px;"></div>
+        </section>
+
+        <!-- Cultural integration -->
+        <section class="chart-section" id="culturalSection" style="display:none; margin-top:1.5rem;">
+          <h2>Cultural Factor Integration</h2>
+          <p class="chart-note">
+            Average demand per record during cultural event periods vs regular periods
+          </p>
+          <div id="culturalChart"></div>
+          <!-- Event distribution pie chart -->
+          <div id="culturalPieWrapper" style="display:none; margin-top:1.25rem;">
+            <h3 style="font-size:0.95rem; font-weight:600; color:#444; margin:0 0 0.3rem;">Cultural Event Distribution</h3>
+            <div id="culturalPieChart"></div>
+          </div>
+          <!-- Per-event breakdown shown only when multiple named events exist -->
+          <div id="culturalBreakdown" style="display:none; margin-top:1rem;">
+            <h3 style="font-size:0.95rem; font-weight:600; color:#444; margin:0 0 0.3rem;">Average Demand by Event Type</h3>
+            <div id="culturalBreakdownChart"></div>
+          </div>
+        </section>
+
+        <!-- Weather integration -->
+        <section class="chart-section" id="weatherSection" style="display:none; margin-top:1.5rem;">
+          <h2>Weather Factor Integration</h2>
+          <p class="chart-note">
+            Average demand split by precipitation level (No Rain / Light Rain ≤10mm / Heavy Rain >10mm)
+          </p>
+          <div id="weatherChart"></div>
+        </section>
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <p>Demand Forecasting System</p>
+    </footer>
+
+    <script>
+      const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+      function showState(stateId) {
+        ["noUploadState","needsTrainingState","dataState"].forEach(id => {
+          document.getElementById(id).style.display = id === stateId ? "block" : "none";
+        });
+      }
+
+      function buildSummaryStats(data) {
+        const container = document.getElementById("summaryStats");
+        const items = [
+          { label: "Training Records", value: data.rowCount.toLocaleString() },
+          { label: "Engineered Features", value: data.featureCount },
+          {
+            label: "Dataset Start",
+            value: data.dateRange ? data.dateRange.start.slice(0, 10) : "N/A"
+          },
+          {
+            label: "Dataset End",
+            value: data.dateRange ? data.dateRange.end.slice(0, 10) : "N/A"
+          },
+        ];
+        container.innerHTML = items.map(it => `
+          <div class="stat-card">
+            <div class="stat-label">${it.label}</div>
+            <div class="stat-value">${it.value}</div>
+          </div>
+        `).join("");
+      }
+
+      function renderCorrelationHeatmap(features, corrMatrix) {
+        const z = features.map(f1 => features.map(f2 => corrMatrix[f1]?.[f2] ?? 0));
+        const textZ = z.map(row => row.map(v => v.toFixed(2)));
+
+        // Shorten long feature names for display
+        const shortNames = features.map(f =>
+          f.replace("WeeklyPartAvgQuantity","WeeklyAvgQty")
+           .replace("MonthlyPartAvgQuantity","MonthlyAvgQty")
+           .replace("Rolling_Quantity_Standard_Deviation","RollingStdDev")
+           .replace("Rolling_3Days_Quantity","Roll3dQty")
+           .replace("Rolling_14Days_Quantity","Roll14dQty")
+           .replace("ZeroDemand_14Day_Rate","ZeroDem14d")
+           .replace("Frequency_Of_Part_Orders","PartOrderFreq")
+           .replace("Month_Average_Quantity","MonthAvgQty")
+           .replace("Dealer_City_Encoded","CityEncoded")
+           .replace("Part_Code_Encoded","PartEncoded")
+           .replace("Rolling_3Day_Rain","Roll3dRain")
+           .replace("Rolling_7Day_Rain","Roll7dRain")
+           .replace("Rolling_14Day_Avg_Rain","Roll14dAvgRain")
+           .replace("Total_Part_Usage","TotalUsage")
+           .replace("Days_Since_Start","DaysSinceStart")
+           .replace("Weekend_x_Month","WeekendXMonth")
+           .replace("Cultural_Factor","CulturalFactor")
+           .replace("Demand_Momentum","DemandMom")
+           .replace("Demand_Trend","DemandTrend")
+           .replace("DaysSinceLastUse","DaysSinceUse")
+           .replace("LastQty_WasZero","LastQtyZero")
+           .replace("CityAvgDemand","CityAvgDem")
+           .replace("CityDemandStandardDeviation","CityDemStd")
+           .replace("City_Order_Count","CityOrderCnt")
+           .replace("IsMonthStart","MonthStart")
+           .replace("IsMonthEnd","MonthEnd")
+           .replace("IsWeekend","Weekend")
+           .replace("WeekOfYear","WeekOfYr")
+           .replace("isHeavyRain","HeavyRain")
+           .replace("Rain_x_Weekend","RainXWeekend")
+           .replace("Rain_x_Cultural","RainXCultural")
+        );
+
+        Plotly.newPlot("correlationChart", [{
+          z: z,
+          x: shortNames,
+          y: shortNames,
+          type: "heatmap",
+          colorscale: "RdBu",
+          zmid: 0,
+          zmin: -1,
+          zmax: 1,
+          text: textZ,
+          texttemplate: "%{text}",
+          textfont: { size: 9 },
+          hovertemplate: "%{y} × %{x}<br>r = %{z:.3f}<extra></extra>",
+          colorbar: { title: "r", thickness: 14, tickfont: { size: 11 } },
+        }], {
+          plot_bgcolor: "#fafafa",
+          paper_bgcolor: "#ffffff",
+          margin: { l: 130, r: 20, t: 10, b: 130 },
+          height: 580,
+          autosize: true,
+          xaxis: { tickangle: 45, tickfont: { size: 10 }, side: "bottom" },
+          yaxis: { tickfont: { size: 10 }, autorange: "reversed" },
+        }, { responsive: true });
+      }
+
+      const SHARED_LAYOUT = {
+        plot_bgcolor: "#fafafa",
+        paper_bgcolor: "#ffffff",
+        font: { family: "inherit", size: 12 },
+      };
+
+      function renderCulturalChart(cs) {
+        const pct = cs.avgWithoutCultural > 0
+          ? ((cs.avgWithCultural - cs.avgWithoutCultural) / cs.avgWithoutCultural * 100).toFixed(1)
+          : "0";
+        const higher = cs.avgWithCultural >= cs.avgWithoutCultural;
+        const yMax = Math.max(cs.avgWithCultural, cs.avgWithoutCultural);
+
+        // Main cultural vs regular comparison — text inside bars avoids top-clipping
+        Plotly.newPlot("culturalChart", [{
+          x: ["Cultural Event Periods", "Regular Periods"],
+          y: [cs.avgWithCultural, cs.avgWithoutCultural],
+          type: "bar",
+          marker: { color: ["#e67e22", "#2c3e50"], opacity: 0.87 },
+          text: [
+            `${cs.avgWithCultural.toFixed(2)}\nn=${cs.countWithCultural.toLocaleString()}\n${higher ? "▲" : "▼"} ${Math.abs(pct)}% vs Regular`,
+            `${cs.avgWithoutCultural.toFixed(2)}\nn=${cs.countWithoutCultural.toLocaleString()}\nBaseline`,
+          ],
+          textposition: "inside",
+          insidetextanchor: "middle",
+          insidetextfont: { color: "white", size: 13 },
+          customdata: [cs.countWithCultural, cs.countWithoutCultural],
+          hovertemplate: "<b>%{x}</b><br>Avg Qty: %{y:.3f}<br>Records: %{customdata:,}<extra></extra>",
+        }], {
+          ...SHARED_LAYOUT,
+          yaxis: { title: "Average Quantity per Record", zeroline: true },
+          margin: { t: 20, b: 50, l: 75, r: 20 },
+          height: 340,
+          autosize: true,
+        }, { responsive: true });
+
+        // Pie chart — event distribution (all named events + Normal Days)
+        const allPieSlices = (cs.eventBreakdown || []).map(e => ({ name: e.name, count: e.count }));
+        if (cs.countWithoutCultural > 0) allPieSlices.push({ name: "Normal Days", count: cs.countWithoutCultural });
+        if (allPieSlices.length > 0) {
+          const PIE_COLORS = ["#e67e22","#c0392b","#8e44ad","#2980b9","#27ae60","#16a085","#f39c12","#2c3e50","#7f8c8d"];
+          Plotly.newPlot("culturalPieChart", [{
+            labels: allPieSlices.map(s => s.name),
+            values: allPieSlices.map(s => s.count),
+            type: "pie",
+            marker: { colors: allPieSlices.map((_, i) => PIE_COLORS[i % PIE_COLORS.length]) },
+            textinfo: "label+percent",
+            hovertemplate: "<b>%{label}</b><br>Records: %{value:,}<br>Share: %{percent}<extra></extra>",
+            hole: 0.35,
+          }], {
+            ...SHARED_LAYOUT,
+            margin: { t: 20, b: 20, l: 20, r: 20 },
+            height: 320,
+            showlegend: true,
+            legend: { orientation: "v", x: 1.02, y: 0.5 },
+            autosize: true,
+          }, { responsive: true });
+          document.getElementById("culturalPieWrapper").style.display = "block";
+        }
+
+        // Per-event breakdown bars (if multiple named events exist)
+        const bd = cs.eventBreakdown;
+        if (bd && bd.length > 1) {
+          const bdMax = Math.max(...bd.map(e => e.avgQty), 1);
+          Plotly.newPlot("culturalBreakdownChart", [{
+            x: bd.map(e => e.name),
+            y: bd.map(e => e.avgQty),
+            type: "bar",
+            marker: {
+              color: bd.map(e => {
+                const t = e.avgQty / bdMax;
+                return `rgba(${Math.round(230 - t*80)},${Math.round(80 + t*80)},${Math.round(20 + t*60)},0.87)`;
+              }),
+            },
+            text: bd.map(e => `${e.avgQty.toFixed(2)}<br>n=${e.count.toLocaleString()}`),
+            textposition: "inside",
+            insidetextanchor: "middle",
+            insidetextfont: { color: "white", size: 12 },
+            customdata: bd.map(e => e.count),
+            hovertemplate: "<b>%{x}</b><br>Avg Qty: %{y:.3f}<br>Records: %{customdata:,}<extra></extra>",
+          }], {
+            ...SHARED_LAYOUT,
+            yaxis: { title: "Average Quantity per Record", zeroline: true },
+            xaxis: { tickangle: 25 },
+            margin: { t: 20, b: 90, l: 75, r: 20 },
+            height: 300,
+            autosize: true,
+          }, { responsive: true });
+          document.getElementById("culturalBreakdown").style.display = "block";
+        }
+
+        document.getElementById("culturalSection").style.display = "block";
+      }
+
+      function renderWeatherChart(ws) {
+        // Build arrays only for categories that have data
+        const labels = [], vals = [], colors = [], counts = [];
+        if (ws.noRainCount > 0)    { labels.push("No Rain");            vals.push(ws.avgNoRain);    colors.push("#e8a838"); counts.push(ws.noRainCount); }
+        if (ws.lightRainCount > 0) { labels.push("Light Rain (≤10mm)"); vals.push(ws.avgLightRain); colors.push("#5ba3d9"); counts.push(ws.lightRainCount); }
+        if (ws.heavyRainCount > 0) { labels.push("Heavy Rain (>10mm)"); vals.push(ws.avgHeavyRain); colors.push("#1a5276"); counts.push(ws.heavyRainCount); }
+        if (!labels.length) return;
+
+        const yMax = Math.max(...vals, 1);
+        const baseVal = ws.noRainCount > 0 ? ws.avgNoRain : vals[0];
+
+        // Fold percentage-vs-baseline into the bar label to avoid overlap with annotations
+        const barText = vals.map((v, i) => {
+          const base = `${v.toFixed(2)}\nn=${counts[i].toLocaleString()}`;
+          if (i === 0) return base;
+          const pct = baseVal > 0 ? ((v - baseVal) / baseVal * 100).toFixed(1) : "0";
+          const arrow = v >= baseVal ? "▲" : "▼";
+          return `${base}\n${arrow} ${Math.abs(pct)}% vs No Rain`;
+        });
+
+        Plotly.newPlot("weatherChart", [{
+          x: labels,
+          y: vals,
+          type: "bar",
+          marker: { color: colors, opacity: 0.87 },
+          text: barText,
+          textposition: "inside",
+          insidetextanchor: "middle",
+          insidetextfont: { color: "white", size: 12 },
+          customdata: counts,
+          hovertemplate: "<b>%{x}</b><br>Avg Qty: %{y:.3f}<br>Records: %{customdata:,}<extra></extra>",
+        }], {
+          ...SHARED_LAYOUT,
+          yaxis: { title: "Average Quantity per Record", zeroline: true },
+          margin: { t: 20, b: 50, l: 75, r: 20 },
+          height: 340,
+          autosize: true,
+        }, { responsive: true });
+        document.getElementById("weatherSection").style.display = "block";
+      }
+
+      async function loadOverviewData() {
+        try {
+          // First check pipeline state for a faster empty-state response
+          const stateRes = await fetch("/api/pipeline-state");
+          const state = await stateRes.json();
+
+          if (!state.latestUploadAt) {
+            document.getElementById("overviewSubtitle").textContent = "No data uploaded yet.";
+            showState("noUploadState");
+            return;
+          }
+
+          const res = await fetch("/api/overview-data");
+          const data = await res.json();
+
+          if (!data.available) {
+            if (data.reason === "no_upload") {
+              document.getElementById("overviewSubtitle").textContent = "No data uploaded yet.";
+              showState("noUploadState");
+            } else {
+              // Preprocessed exists but feature engineering hasn't run (model not trained)
+              document.getElementById("overviewSubtitle").textContent =
+                "Data uploaded and preprocessed. Train the model to see full visualisations.";
+              showState("needsTrainingState");
+            }
+            return;
+          }
+
+          // Data available — render all charts
+          const range = data.dateRange
+            ? `${data.dateRange.start.slice(0,10)} to ${data.dateRange.end.slice(0,10)}`
+            : "";
+          document.getElementById("overviewSubtitle").textContent =
+            `${data.rowCount.toLocaleString()} records · ${data.featureCount} features selected${range ? " · " + range : ""}`;
+
+          showState("dataState");
+          buildSummaryStats(data);
+          renderCorrelationHeatmap(data.features, data.correlationMatrix);
+
+          if (data.culturalStats) renderCulturalChart(data.culturalStats);
+          if (data.weatherStats) renderWeatherChart(data.weatherStats);
+
+        } catch (err) {
+          console.error("Error loading overview data:", err);
+          document.getElementById("overviewSubtitle").textContent =
+            "Could not load overview data. Check the server is running.";
+        }
+      }
+
+      loadOverviewData();
+    </script>
+  </body>
+</html>

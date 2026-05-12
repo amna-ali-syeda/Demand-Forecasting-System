@@ -1,0 +1,16 @@
+Date,Vehicle_ID,Part_ID,Demand,Lead_Time,Season,Region,Supplier_Cost,Customer_Type
+2025-01-01,V001,P001,145,7,Winter,North,150.50,Corporate
+2025-01-02,V001,P001,152,7,Winter,North,150.50,Corporate
+2025-01-03,V001,P001,148,7,Winter,North,150.50,Corporate
+2025-01-04,V001,P001,156,7,Winter,North,150.50,Corporate
+2025-01-05,V001,P001,149,7,Winter,North,150.50,Corporate
+2025-01-06,V002,P002,234,5,Winter,South,200.75,Retail
+2025-01-07,V002,P002,241,5,Winter,South,200.75,Retail
+2025-01-08,V002,P002,238,5,Winter,South,200.75,Retail
+2025-01-09,V002,P002,245,5,Winter,South,200.75,Retail
+2025-01-10,V002,P002,240,5,Winter,South,200.75,Retail
+2025-01-11,V003,P003,89,3,Winter,East,120.25,Corporate
+2025-01-12,V003,P003,91,3,Winter,East,120.25,Corporate
+2025-01-13,V003,P003,87,3,Winter,East,120.25,Corporate
+2025-01-14,V003,P003,93,3,Winter,East,120.25,Corporate
+2025-01-15,V003,P003,90,3,Winter,East,120.25,Corporate

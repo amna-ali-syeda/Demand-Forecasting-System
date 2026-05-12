@@ -1,0 +1,44 @@
+{
+  "version": 3,
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/static/(.*)",
+      "dest": "/static/$1"
+    },
+    {
+      "src": "/datasets/(.*)",
+      "dest": "/datasets/$1"
+    },
+    {
+      "src": "/modelPredictions/(.*)",
+      "dest": "/modelPredictions/$1"
+    },
+    {
+      "src": "/metrics/(.*)",
+      "dest": "/metrics/$1"
+    },
+    {
+      "src": "/visuals/(.*)",
+      "dest": "/visuals/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/server.js"
+    }
+  ],
+  "functions": {
+    "server.js": {
+      "memory": 1024,
+      "maxDuration": 30
+    }
+  },
+  "env": {
+    "PYTHON_EXECUTABLE": "/usr/bin/python3"
+  }
+}

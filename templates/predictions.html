@@ -1,0 +1,814 @@
+<!doctype html>
+<!-- Programmer: Amna Ali | File: predictions.html -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <script>if(!sessionStorage.getItem("dfs_authenticated")){window.location.replace("login.html");}</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Predictions - Demand Forecasting System</title>
+    <link rel="stylesheet" href="../static/css/style.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Complete Plotly library-->
+    <script src="../static/plotly.min.js"></script>
+    <style>
+      #loadPredictionsBtn {
+        transition: transform 0.1s ease, box-shadow 0.1s ease;
+      }
+      #loadPredictionsBtn:active:not(:disabled) {
+        transform: scale(0.95);
+        box-shadow: inset 0 2px 5px rgba(0, 0, 0, 0.25);
+      }
+      #loadPredictionsBtn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      @keyframes predLoadSlide {
+        0%   { transform: translateX(-100%); }
+        100% { transform: translateX(420%); }
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="navbar">
+      <div class="nav-container">
+        <div class="nav-logo">Demand Forecasting System</div>
+        <ul class="nav-menu">
+          <li class="nav-item">
+            <a href="index.html" class="nav-link">Overview</a>
+          </li>
+          <li class="nav-item">
+            <a href="predictions.html" class="nav-link">Predictions</a>
+          </li>
+          <li class="nav-item">
+            <a href="upload.html" class="nav-link">Upload Data</a>
+          </li>
+        <li class="nav-item"><a href="#" class="nav-link" onclick="sessionStorage.clear();window.location.replace('login.html');return false;" style="color:#e74c3c;">Logout</a></li>
+        </ul>
+      </div>
+    </nav>
+
+    <main class="container">
+      <div class="page-header">
+        <h1>Demand Predictions</h1>
+        <p>Predictions from Random Forest Model</p>
+      </div>
+
+      <section class="chart-section" style="padding-top: 0.5rem">
+        <h2>Prediction Controls</h2>
+        <div
+          style="display: flex; gap: 1rem; flex-wrap: wrap; align-items: end"
+        >
+          <div>
+            <label
+              for="monthsAhead"
+              style="display: block; margin-bottom: 0.4rem; font-weight: 600"
+              >Months Ahead</label
+            >
+            <select
+              id="monthsAhead"
+              style="
+                padding: 0.55rem;
+                min-width: 140px;
+                border-radius: 6px;
+                border: 1px solid #cfd8dc;
+              "
+            >
+              <option value="1" selected>1 Month</option>
+              <option value="3">3 Months</option>
+              <option value="6">6 Months</option>
+            </select>
+          </div>
+          <button
+            id="loadPredictionsBtn"
+            style="
+              padding: 0.65rem 1.1rem;
+              border: none;
+              border-radius: 6px;
+              background: #0d47a1;
+              color: #fff;
+              cursor: pointer;
+              font-weight: 600;
+            "
+          >
+            Generate Prediction
+          </button>
+          <button
+            id="downloadPredictionsBtn"
+            style="
+              padding: 0.65rem 1.1rem;
+              border: 1px solid #0d47a1;
+              border-radius: 6px;
+              background: #ffffff;
+              color: #0d47a1;
+              cursor: pointer;
+              font-weight: 600;
+            "
+            disabled
+          >
+            Download Predictions
+          </button>
+        </div>
+        <p id="predictionMeta" style="margin-top: 0.7rem; color: #555"></p>
+        <div
+          id="predictionBlockBanner"
+          style="
+            display: none;
+            margin-top: 0.7rem;
+            padding: 0.75rem 0.9rem;
+            border-radius: 6px;
+            border: 1px solid #f0ad4e;
+            background: #fff8e1;
+            color: #7a4b00;
+            font-weight: 600;
+          "
+        ></div>
+        <div id="predictionLoadingBar" style="display:none; margin-top:0.9rem;">
+          <div style="display:flex; align-items:center; gap:0.75rem;">
+            <div style="flex:1; height:6px; background:#e3e8f0; border-radius:3px; overflow:hidden; position:relative;">
+              <div style="position:absolute; height:100%; width:25%; background:linear-gradient(90deg,#0d47a1,#1f77b4); border-radius:3px; animation:predLoadSlide 1.4s ease-in-out infinite;"></div>
+            </div>
+            <span style="font-size:0.85rem; color:#0d47a1; font-weight:600; white-space:nowrap;">Generating predictions&hellip;</span>
+          </div>
+        </div>
+      </section>
+
+      <div class="stats-grid" id="statsContainer">
+        <div class="stat-card">
+          <div class="stat-label">Total Predicted Demand</div>
+          <div class="stat-value" id="totalDemand">Loading...</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Average Daily Demand</div>
+          <div class="stat-value" id="avgDemand">Loading...</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Peak Day Demand</div>
+          <div class="stat-value" id="peakDemand">Loading...</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Standard Deviation</div>
+          <div class="stat-value" id="stdDev">Loading...</div>
+        </div>
+      </div>
+
+      <section class="chart-section">
+        <h2>Daily Demand Forecast</h2>
+        <div id="demandChart" class="chart-container-large"></div>
+      </section>
+
+      <!-- Prediction insights after predictions are generated-->
+      <section class="chart-section" id="insightsSection" style="display:none;">
+        <h2>Prediction Insights</h2>
+        <p style="color:#666; font-size:0.9rem; margin:0 0 1.25rem;">Breakdown of the forecast for the selected period.</p>
+
+        <h3 style="font-size:0.95rem; font-weight:600; color:#333; margin:0 0 0.4rem;">Monthly Demand Totals</h3>
+        <div id="monthlyBreakdownChart"></div>
+
+        <h3 style="font-size:0.95rem; font-weight:600; color:#333; margin:1.5rem 0 0.4rem;">Demand by Day of Week</h3>
+        <div id="weekdayChart"></div>
+
+        <div id="topPartsWrapper" style="margin-top:1.5rem;">
+          <h3 style="font-size:0.95rem; font-weight:600; color:#333; margin:0 0 0.4rem;">Top 10 Most Demanded Parts (Total Predicted Qty)</h3>
+          <div id="topPartsChart"></div>
+        </div>
+      </section>
+
+      <!-- Monthly part-level aggregation table -->
+      <section class="chart-section" id="monthlyPartSection" style="display:none; margin-top:1.5rem;">
+        <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.4rem;">
+          <h2 style="margin:0;">Monthly Part-Level Aggregation</h2>
+          <button id="downloadMonthlyPartBtn" style="
+            padding:0.55rem 1rem; border:1px solid #0d47a1; border-radius:6px;
+            background:#ffffff; color:#0d47a1; cursor:pointer; font-weight:600; font-size:0.88rem;
+          ">Download CSV</button>
+        </div>
+        <p style="color:#666; font-size:0.9rem; margin:0 0 1rem;">
+          Total predicted quantity per part per month, sorted by overall demand (highest first).
+        </p>
+        <div style="overflow-x:auto; -webkit-overflow-scrolling:touch;">
+          <table id="monthlyPartTable" style="
+            width:100%; border-collapse:collapse; font-size:0.88rem;
+            min-width:480px;
+          "></table>
+        </div>
+      </section>
+
+      <section class="table-section">
+        <h2>Detailed Predictions</h2>
+        <div class="table-container">
+          <table class="predictions-table" id="predictionsTable">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Part Code</th>
+                <th>Predicted Quantity</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <tr>
+                <td colspan="3" style="text-align: center">Loading...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>Demand Forecasting System</p>
+    </footer>
+
+    <script>
+      let latestPredictionsDownloadUrl = null;
+
+      function setPredictionsDownloadUrl(downloadUrl) {
+        latestPredictionsDownloadUrl = downloadUrl || null;
+        const downloadBtn = document.getElementById("downloadPredictionsBtn");
+        downloadBtn.disabled = !latestPredictionsDownloadUrl;
+      }
+
+      function setPredictionBlockBanner(message) {
+        const banner = document.getElementById("predictionBlockBanner");
+        if (!message) {
+          banner.style.display = "none";
+          banner.textContent = "";
+          return;
+        }
+        banner.textContent = message;
+        banner.style.display = "block";
+      }
+
+      async function getExplicitPredictionBlockMessage(err) {
+        if (!err || err.requiresAction !== "upload_and_train") {
+          return null;
+        }
+
+        try {
+          const response = await fetch("/api/pipeline-state");
+          const state = await response.json();
+
+          if (!state || !state.success || !state.latestUploadAt) {
+            return "Prediction blocked: no uploaded dataset found yet. Upload data and preprocess first.";
+          }
+
+          if (
+            state.latestUploadStatus === "raw_uploaded_preprocessing_failed"
+          ) {
+            return "Prediction blocked: uploaded to raw storage, but preprocessing failed. Re-upload corrected data first.";
+          }
+
+          if (
+            state.latestUploadStatus === "preprocessed_zero_rows" ||
+            (state.latestUploadHasRows === false &&
+              Number(state.latestRowsCount) === 0)
+          ) {
+            return "Prediction blocked: preprocessing produced 0 rows. Upload data that survives preprocessing filters, then retrain.";
+          }
+
+          if (
+            state.latestUploadHasRows === true &&
+            (!state.modelReady ||
+              state.latestUploadAt !== state.lastTrainedUploadAt)
+          ) {
+            return "Prediction blocked: latest upload is ready, but model is not trained on it yet. Click Retrain Model on Upload Data page.";
+          }
+        } catch (stateErr) {
+          console.error("Failed to resolve prediction block reason:", stateErr);
+        }
+
+        return "Prediction unavailable. Please upload data and train model first.";
+      }
+
+      const DAY_NAMES = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+      const MONTH_NAMES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+      function renderMonthlyPartTable(detailedRows) {
+        const section = document.getElementById("monthlyPartSection");
+        const table   = document.getElementById("monthlyPartTable");
+        if (!detailedRows || !detailedRows.length) { section.style.display = "none"; return; }
+
+        // Collect ordered months
+        const monthSet = new Set();
+        detailedRows.forEach(r => {
+          const dt = new Date(r.Date);
+          monthSet.add(`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`);
+        });
+        const months = Array.from(monthSet).sort();
+        const monthLabels = months.map(m => {
+          const [yr, mo] = m.split("-");
+          return `${MONTH_NAMES[parseInt(mo,10)-1]} ${yr}`;
+        });
+
+        // Aggregate per part × month
+        const partMap = {};
+        detailedRows.forEach(r => {
+          const part = String(r.Part_Code || "Unknown");
+          const dt   = new Date(r.Date);
+          const mKey = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`;
+          const qty  = Number(r.Predicted_Quantity || 0);
+          if (!partMap[part]) partMap[part] = { byMonth: {}, total: 0 };
+          partMap[part].byMonth[mKey] = (partMap[part].byMonth[mKey] || 0) + qty;
+          partMap[part].total += qty;
+        });
+
+        const sorted = Object.entries(partMap).sort(([,a],[,b]) => b.total - a.total);
+
+        // Header
+        const thStyle = "padding:7px 10px; text-align:right; background:#0d47a1; color:#fff; white-space:nowrap; border:1px solid #1565c0;";
+        const thFirst = "padding:7px 10px; text-align:left; background:#0d47a1; color:#fff; white-space:nowrap; border:1px solid #1565c0;";
+        const thead = `<thead><tr>
+          <th style="${thFirst}">Part Code</th>
+          ${monthLabels.map(l => `<th style="${thStyle}">${l}</th>`).join("")}
+          <th style="${thStyle}">Total</th>
+        </tr></thead>`;
+
+        // Body rows
+        const tdBase  = "padding:5px 10px; text-align:right; border:1px solid #e0e0e0; white-space:nowrap;";
+        const tdFirst = "padding:5px 10px; text-align:left;  border:1px solid #e0e0e0; white-space:nowrap; font-family:monospace;";
+        const bodyRows = sorted.map(([part, data], i) => {
+          const bg = i % 2 === 0 ? "#ffffff" : "#f5f7fa";
+          const cells = months.map(m => {
+            const v = data.byMonth[m] || 0;
+            return `<td style="${tdBase} background:${bg};">${v > 0 ? Math.round(v).toLocaleString() : "—"}</td>`;
+          });
+          return `<tr>
+            <td style="${tdFirst} background:${bg};">${part}</td>
+            ${cells.join("")}
+            <td style="${tdBase} background:${bg}; font-weight:600;">${Math.round(data.total).toLocaleString()}</td>
+          </tr>`;
+        });
+
+        // Column totals row
+        const colTotals = months.map(m => sorted.reduce((s,[,d]) => s + (d.byMonth[m]||0), 0));
+        const grandTotal = colTotals.reduce((a,b) => a+b, 0);
+        const tfStyle = "padding:6px 10px; text-align:right; border:1px solid #c5cae9; background:#e8eaf6; font-weight:700; white-space:nowrap;";
+        const tfFirst = "padding:6px 10px; text-align:left;  border:1px solid #c5cae9; background:#e8eaf6; font-weight:700;";
+        const totalsRow = `<tr>
+          <td style="${tfFirst}">TOTAL</td>
+          ${colTotals.map(v => `<td style="${tfStyle}">${Math.round(v).toLocaleString()}</td>`).join("")}
+          <td style="${tfStyle}">${Math.round(grandTotal).toLocaleString()}</td>
+        </tr>`;
+
+        table.innerHTML = thead + `<tbody>${bodyRows.join("")}${totalsRow}</tbody>`;
+        section.style.display = "block";
+
+        // Wire up CSV download
+        document.getElementById("downloadMonthlyPartBtn").onclick = () => {
+          const csvRows = [];
+          // Header
+          csvRows.push(["Part Code", ...monthLabels, "Total"].map(v => `"${v}"`).join(","));
+          // Data rows
+          sorted.forEach(([part, data]) => {
+            const cells = months.map(m => Math.round(data.byMonth[m] || 0));
+            csvRows.push([`"${part}"`, ...cells, Math.round(data.total)].join(","));
+          });
+          // Totals row
+          const totalsRowCsv = ["TOTAL", ...colTotals.map(v => Math.round(v)), Math.round(grandTotal)].join(",");
+          csvRows.push(totalsRowCsv);
+
+          const blob = new Blob([csvRows.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+          const url  = URL.createObjectURL(blob);
+          const a    = document.createElement("a");
+          a.href     = url;
+          a.download = "monthly_part_predictions.csv";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+        };
+      }
+
+      function renderInsightCharts(dates, quantities, detailedRows) {
+        try {
+          const sharedLayout = {
+            plot_bgcolor: "#fafafa",
+            paper_bgcolor: "#ffffff",
+            font: { family: "inherit", size: 12 },
+          };
+
+          // --- Monthly breakdown ---
+          const monthMap = {};
+          dates.forEach((d, i) => {
+            const dt = new Date(d);
+            const key = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}`;
+            const label = `${MONTH_NAMES[dt.getMonth()]} ${dt.getFullYear()}`;
+            if (!monthMap[key]) monthMap[key] = { label, total: 0 };
+            monthMap[key].total += quantities[i];
+          });
+          const sortedMonths = Object.entries(monthMap).sort(([a],[b]) => a.localeCompare(b));
+          const mLabels = sortedMonths.map(([,v]) => v.label);
+          const mTotals = sortedMonths.map(([,v]) => Math.round(v.total));
+          const mMax = Math.max(...mTotals, 1);
+
+          Plotly.newPlot("monthlyBreakdownChart", [{
+            x: mLabels,
+            y: mTotals,
+            type: "bar",
+            marker: {
+              color: mTotals.map(v => {
+                const t = v / mMax;
+                return `rgb(${Math.round(13+180*(1-t))},${Math.round(71+120*(1-t))},${Math.round(161+60*(1-t))})`;
+              }),
+              opacity: 0.88,
+            },
+            text: mTotals.map(v => v.toLocaleString()),
+            textposition: "outside",
+            textfont: { size: 11 },
+            hovertemplate: "<b>%{x}</b><br>Total Predicted: %{y:,}<extra></extra>",
+          }], {
+            ...sharedLayout,
+            yaxis: { title: "Total Predicted Qty", zeroline: true },
+            margin: { t: 30, b: 60, l: 70, r: 20 },
+            height: 320,
+            autosize: true,
+          }, { responsive: true });
+
+          // --- Weekday distribution ---
+          const dayBuckets = Array.from({ length: 7 }, () => ({ total: 0, count: 0 }));
+          dates.forEach((d, i) => {
+            const day = new Date(d).getDay();
+            dayBuckets[day].total += quantities[i];
+            dayBuckets[day].count += 1;
+          });
+          const dayAvgs = dayBuckets.map(b => b.count > 0 ? Math.round(b.total / b.count) : 0);
+
+          Plotly.newPlot("weekdayChart", [{
+            x: DAY_NAMES,
+            y: dayAvgs,
+            type: "bar",
+            marker: {
+              color: ["#e67e22","#1f77b4","#1f77b4","#1f77b4","#1f77b4","#1f77b4","#e67e22"],
+              opacity: 0.88,
+            },
+            text: dayAvgs.map(v => v.toLocaleString()),
+            textposition: "outside",
+            textfont: { size: 11 },
+            hovertemplate: "<b>%{x}</b><br>Avg Daily Qty: %{y:,}<extra></extra>",
+          }], {
+            ...sharedLayout,
+            yaxis: { title: "Avg Daily Qty", zeroline: true },
+            margin: { t: 30, b: 60, l: 70, r: 20 },
+            height: 320,
+            autosize: true,
+            annotations: [{
+              x: 1, xref: "paper", y: 1.06, yref: "paper",
+              text: "Orange = weekend", showarrow: false,
+              font: { size: 11, color: "#e67e22" }, xanchor: "right",
+            }],
+          }, { responsive: true });
+
+          // --- Top 10 parts ---
+          if (detailedRows && detailedRows.length > 0) {
+            const partTotals = {};
+            detailedRows.forEach(r => {
+              const part = String(r.Part_Code || "Unknown");
+              const qty = Number(r.Predicted_Quantity || 0);
+              partTotals[part] = (partTotals[part] || 0) + qty;
+            });
+            const top10 = Object.entries(partTotals)
+              .sort(([,a],[,b]) => b - a)
+              .slice(0, 10)
+              .reverse();
+
+            const fullLabels = top10.map(([p]) => p);
+            const displayLabels = fullLabels.map(p => p.length > 22 ? p.slice(0, 20) + "…" : p);
+            const topQtys = top10.map(([,q]) => Math.round(q));
+            const topMax = Math.max(...topQtys, 1);
+            const chartH = Math.max(320, top10.length * 38 + 80);
+
+            Plotly.newPlot("topPartsChart", [{
+              y: displayLabels,
+              x: topQtys,
+              type: "bar",
+              orientation: "h",
+              customdata: fullLabels,
+              marker: {
+                color: topQtys.map(v => {
+                  const t = v / topMax;
+                  return `rgb(${Math.round(13+180*(1-t))},${Math.round(71+120*(1-t))},${Math.round(161+60*(1-t))})`;
+                }),
+                opacity: 0.88,
+              },
+              text: topQtys.map(v => v.toLocaleString()),
+              textposition: "outside",
+              textfont: { size: 11 },
+              hovertemplate: "<b>%{customdata}</b><br>Total Predicted: %{x:,}<extra></extra>",
+            }], {
+              ...sharedLayout,
+              xaxis: { title: "Total Predicted Quantity", zeroline: true },
+              yaxis: { type: "category", autorange: true },
+              margin: { t: 20, b: 50, l: 190, r: 80 },
+              height: chartH,
+              autosize: true,
+            }, { responsive: true });
+
+            document.getElementById("topPartsWrapper").style.display = "block";
+          } else {
+            document.getElementById("topPartsWrapper").style.display = "none";
+          }
+
+          document.getElementById("insightsSection").style.display = "block";
+        } catch (chartErr) {
+          console.error("Insights chart error:", chartErr);
+        }
+      }
+
+      function loadPredictions() {
+        const btn = document.getElementById("loadPredictionsBtn");
+        const loadingBar = document.getElementById("predictionLoadingBar");
+        btn.disabled = true;
+        btn.textContent = "Generating…";
+        loadingBar.style.display = "block";
+
+        const monthsAhead = document.getElementById("monthsAhead").value;
+        const query = new URLSearchParams({
+          monthsAhead,
+          retrainModel: "false",
+          model: "random-forest",
+        });
+
+        fetch(`/api/predictions-data?${query.toString()}`)
+          .then(async (response) => {
+            const data = await response.json();
+            if (!response.ok) {
+              throw data;
+            }
+            return data;
+          })
+          .then((data) => {
+            setPredictionsDownloadUrl(data.downloadUrl || null);
+
+            // Normalize incoming data: support {dates, quantities} or detailed rows
+            let dates = Array.isArray(data.dates) ? data.dates.slice() : [];
+            let quantities = Array.isArray(data.quantities)
+              ? data.quantities.map(Number)
+              : [];
+            let detailedRows = Array.isArray(data.rows)
+              ? data.rows.slice()
+              : [];
+
+            // If server returned detailed rows or there are duplicate dates, aggregate by date
+            if (
+              (data.rows && data.rows.length) ||
+              (dates.length && new Set(dates).size !== dates.length)
+            ) {
+              const rows =
+                data.rows && data.rows.length
+                  ? data.rows
+                  : dates.map((d, i) => ({ Date: d, Value: quantities[i] }));
+              const agg = {};
+              const normalizedDetailed = [];
+              rows.forEach((r) => {
+                // detect date and quantity keys in each row
+                const date =
+                  r.Date || r.date || r.date_string || r["Date"] || "";
+                const rawQty =
+                  r.Total_Predicted_Quantity ??
+                  r.Predicted_Quantity ??
+                  r["Predicted Quantity"] ??
+                  r.predicted_quantity ??
+                  r.quantity ??
+                  r.Value ??
+                  0;
+                const partCode =
+                  r.Part_Code || r.part_code || r["Part Code"] || "N/A";
+                const q = Number(rawQty) || 0;
+                if (!date) return;
+                agg[date] = (agg[date] || 0) + q;
+                normalizedDetailed.push({
+                  Date: date,
+                  Part_Code: String(partCode),
+                  Predicted_Quantity: q,
+                });
+              });
+              dates = Object.keys(agg).sort();
+              quantities = dates.map((d) => agg[d]);
+              detailedRows = normalizedDetailed.sort((a, b) => {
+                const byDate = String(a.Date).localeCompare(String(b.Date));
+                if (byDate !== 0) return byDate;
+                return String(a.Part_Code).localeCompare(String(b.Part_Code));
+              });
+            }
+
+            if (!dates || dates.length === 0) {
+              document.getElementById("tableBody").innerHTML =
+                '<tr><td colspan="3" style="text-align: center;">No prediction data available</td></tr>';
+              document.getElementById("totalDemand").textContent = "N/A";
+              document.getElementById("avgDemand").textContent = "N/A";
+              document.getElementById("peakDemand").textContent = "N/A";
+              document.getElementById("stdDev").textContent = "N/A";
+              setPredictionsDownloadUrl(null);
+              setPredictionBlockBanner(null);
+              return;
+            }
+
+            if (data.control) {
+              document.getElementById("predictionMeta").textContent =
+                `Model: ${data.control.model} | Months Ahead: ${data.control.monthsAhead} | Retrain Requested: ${data.control.retrainModelRequested ? "Yes" : "No"}`;
+            }
+
+            // Ensure quantities are numbers
+            quantities = quantities.map((q) => Number(q) || 0);
+
+            // Calculate statistics
+            const total = quantities.reduce((a, b) => a + b, 0);
+            const avg = total / quantities.length;
+            const max = Math.max(...quantities);
+            const variance =
+              quantities.reduce((sum, q) => sum + Math.pow(q - avg, 2), 0) /
+              quantities.length;
+            const std = Math.sqrt(variance);
+
+            document.getElementById("totalDemand").textContent =
+              total.toLocaleString("en-US", { maximumFractionDigits: 0 });
+            document.getElementById("avgDemand").textContent =
+              avg.toLocaleString("en-US", { maximumFractionDigits: 0 });
+            document.getElementById("peakDemand").textContent =
+              max.toLocaleString("en-US", { maximumFractionDigits: 0 });
+            document.getElementById("stdDev").textContent = std.toLocaleString(
+              "en-US",
+              { maximumFractionDigits: 0 },
+            );
+
+            // get prediction insight charts
+            renderInsightCharts(dates, quantities, detailedRows);
+            renderMonthlyPartTable(detailedRows);
+
+            // Line chart
+            const trace = {
+              x: dates,
+              y: quantities,
+              mode: "lines+markers",
+              name: "Predicted Demand",
+              line: {
+                color: "#1f77b4",
+                width: 3,
+              },
+              marker: {
+                size: 6,
+              },
+            };
+
+            // get line chart directly
+            console.log(
+              "Rendering demand chart with dates:",
+              dates.length,
+              "quantities:",
+              quantities.length,
+            );
+            try {
+              Plotly.newPlot("demandChart", [trace], {
+                title: "Daily Demand Forecast",
+                xaxis: { title: "Date" },
+                yaxis: { title: "Predicted Quantity" },
+                hovermode: "x unified",
+                height: 500,
+              });
+              console.log("Demand chart rendered successfully");
+              setPredictionBlockBanner(null);
+            } catch (plotErr) {
+              console.error("Plotly error:", plotErr);
+              document.getElementById("demandChart").innerHTML =
+                '<div style="padding:20px; text-align:center; color:red;">Error: ' +
+                plotErr.message +
+                "</div>";
+            }
+
+            // table cap set to 200 rows and batch to avoid lag
+            const tableBody = document.getElementById("tableBody");
+            tableBody.innerHTML = "";
+            try {
+              const rowsForTable = detailedRows.length
+                ? detailedRows
+                : dates.map((date, idx) => ({
+                    Date: date,
+                    Part_Code: "ALL",
+                    Predicted_Quantity: quantities[idx],
+                  }));
+
+              const MAX_ROWS = 200;
+              const visibleRows = rowsForTable.slice(0, MAX_ROWS);
+              const fragment = document.createDocumentFragment();
+
+              visibleRows.forEach((entry) => {
+                const row = document.createElement("tr");
+                const tdDate = document.createElement("td");
+                tdDate.textContent = entry.Date;
+                const tdPart = document.createElement("td");
+                tdPart.textContent = entry.Part_Code;
+                const tdQty = document.createElement("td");
+                tdQty.textContent = Number(
+                  entry.Predicted_Quantity || 0,
+                ).toLocaleString("en-US", { maximumFractionDigits: 2 });
+                row.appendChild(tdDate);
+                row.appendChild(tdPart);
+                row.appendChild(tdQty);
+                fragment.appendChild(row);
+              });
+
+              tableBody.appendChild(fragment);
+
+              if (rowsForTable.length > MAX_ROWS) {
+                const infoRow = document.createElement("tr");
+                infoRow.innerHTML = `<td colspan="3" style="text-align:center; color:#555; font-size:0.85rem; padding:0.75rem;">Showing ${MAX_ROWS} of ${rowsForTable.length} rows. Download Predictions for the full dataset.</td>`;
+                tableBody.appendChild(infoRow);
+              }
+            } catch (tableErr) {
+              console.error("Table rendering error:", tableErr);
+              tableBody.innerHTML =
+                '<tr><td colspan="3" style="text-align: center; color: red;">Error rendering prediction table</td></tr>';
+            }
+          })
+          .catch(async (err) => {
+            console.error("Error loading predictions:", err);
+            setPredictionsDownloadUrl(null);
+            document.getElementById("monthlyPartSection").style.display = "none";
+            const explicitBlockMessage =
+              await getExplicitPredictionBlockMessage(err);
+            const message =
+              explicitBlockMessage ||
+              (err && err.error
+                ? err.error
+                : "Prediction unavailable. Please upload data and train model first.");
+            document.getElementById("predictionMeta").textContent = message;
+            setPredictionBlockBanner(explicitBlockMessage);
+            document.getElementById("tableBody").innerHTML =
+              '<tr><td colspan="3" style="text-align: center; color: red;">Upload data and train model from Upload Data page before predicting.</td></tr>';
+            document.getElementById("totalDemand").textContent = "N/A";
+            document.getElementById("avgDemand").textContent = "N/A";
+            document.getElementById("peakDemand").textContent = "N/A";
+            document.getElementById("stdDev").textContent = "N/A";
+          })
+          .finally(() => {
+            btn.disabled = false;
+            btn.textContent = "Generate Prediction";
+            loadingBar.style.display = "none";
+          });
+      }
+
+      document
+        .getElementById("loadPredictionsBtn")
+        .addEventListener("click", loadPredictions);
+
+      document
+        .getElementById("downloadPredictionsBtn")
+        .addEventListener("click", () => {
+          if (!latestPredictionsDownloadUrl) {
+            return;
+          }
+          const a = document.createElement("a");
+          a.href = latestPredictionsDownloadUrl;
+          a.download = "";
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+        });
+
+      // Show idle state on page load to avoid loading python file on every click— user must click Generate Prediction. 
+      (async () => {
+        try {
+          const r = await fetch("/api/pipeline-state");
+          const state = await r.json();
+          const banner = document.getElementById("predictionBlockBanner");
+          const meta = document.getElementById("predictionMeta");
+
+          if (!state.latestUploadAt) {
+            meta.textContent =
+              "No dataset uploaded yet. Upload data on the Upload Data page first.";
+            return;
+          }
+          if (
+            state.latestUploadStatus === "raw_uploaded_preprocessing_failed"
+          ) {
+            banner.textContent =
+              "Preprocessing failed for the latest upload. Re-upload corrected data.";
+            banner.style.display = "block";
+            return;
+          }
+          if (state.latestUploadStatus === "preprocessed_zero_rows") {
+            banner.textContent =
+              "Latest upload produced 0 rows after preprocessing. Upload a valid dataset.";
+            banner.style.display = "block";
+            return;
+          }
+          if (
+            !state.modelReady ||
+            state.latestUploadAt !== state.lastTrainedUploadAt
+          ) {
+            meta.textContent =
+              "Model not trained on latest upload. Retrain on Upload Data page, then click Generate Prediction.";
+            return;
+          }
+          document.getElementById("tableBody").innerHTML =
+            '<tr><td colspan="3" style="text-align:center;">Click Generate Prediction to load forecast.</td></tr>';
+          document.getElementById("totalDemand").textContent = "-";
+          document.getElementById("avgDemand").textContent = "-";
+          document.getElementById("peakDemand").textContent = "-";
+          document.getElementById("stdDev").textContent = "-";
+        } catch (_) {
+          // silently skip — user can still click Generate Prediction
+        }
+      })();
+    </script>
+  </body>
+</html>
