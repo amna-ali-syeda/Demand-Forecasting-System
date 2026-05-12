@@ -947,9 +947,13 @@ app.use((err, req, res, next) => {
   next();
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`\n=== SERVER STARTED ===`);
-  console.log(`Node.js backend listening on http://localhost:${PORT}`);
-  console.log(`==================\n`);
-});
+if (require.main === module) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`\n=== SERVER STARTED ===`);
+    console.log(`Node.js backend listening on http://localhost:${PORT}`);
+    console.log(`==================\n`);
+  });
+}
+
+module.exports = app;
