@@ -1,35 +1,29 @@
 {
-  "version": 3,
-  "builds": [
+  "version": 2,
+  "rewrites": [
     {
-      "src": "server.js",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/static/(.*)",
-      "dest": "/static/$1"
+      "source": "/static/:path*",
+      "destination": "/static/:path*"
     },
     {
-      "src": "/datasets/(.*)",
-      "dest": "/datasets/$1"
+      "source": "/datasets/:path*",
+      "destination": "/datasets/:path*"
     },
     {
-      "src": "/modelPredictions/(.*)",
-      "dest": "/modelPredictions/$1"
+      "source": "/modelPredictions/:path*",
+      "destination": "/modelPredictions/:path*"
     },
     {
-      "src": "/metrics/(.*)",
-      "dest": "/metrics/$1"
+      "source": "/metrics/:path*",
+      "destination": "/metrics/:path*"
     },
     {
-      "src": "/visuals/(.*)",
-      "dest": "/visuals/$1"
+      "source": "/visuals/:path*",
+      "destination": "/visuals/:path*"
     },
     {
-      "src": "/(.*)",
-      "dest": "/server.js"
+      "source": "/:path*",
+      "destination": "/server.js"
     }
   ],
   "functions": {
