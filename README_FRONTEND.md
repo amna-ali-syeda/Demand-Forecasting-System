@@ -16,7 +16,7 @@ npm install
 npm start
 ```
 
-The application will start on `http://localhost:5000`
+The application will start on `http://localhost:5008`
 
 ### 3. Project Structure
 
@@ -44,32 +44,32 @@ The application will start on `http://localhost:5000`
 
 ## Pages
 
-### 1. Overview (http://localhost:5000/index.html)
+### 1. Overview (http://localhost:5008/index.html)
 
 - Project objectives and methodology
 - Quick statistics dashboard (models trained, best MAPE, best R², test samples)
 - Key features summary
 
-### 2. Model Comparison (http://localhost:5000/comparison.html)
+### 2. Model Comparison (http://localhost:5008/comparison.html)
 
 - Performance metrics table (sortable by MAPE)
 - MAPE comparison bar chart
 - R² score comparison bar chart
 - RMSE vs MAE scatter plot with model labels
 
-### 3. Best Model (http://localhost:5000/best_model.html)
+### 3. Best Model (http://localhost:5008/best_model.html)
 
 - Winner announcement card
 - Performance metrics (MAPE, R², MAE, RMSE)
 - Model performance radar chart
 
-### 4. Predictions (http://localhost:5000/predictions.html)
+### 4. Predictions (http://localhost:5008/predictions.html)
 
 - Summary statistics (total demand, avg daily, peak day, std deviation)
 - Daily demand forecast line chart
 - Detailed predictions table with dates and quantities
 
-### 5. Benchmark Comparison (http://localhost:5000/benchmark.html)
+### 5. Benchmark Comparison (http://localhost:5008/benchmark.html)
 
 - ARIMA vs Best Model comparison cards
 - MAPE improvement percentage
@@ -145,7 +145,7 @@ npm start
 
 - Clear browser cache (Ctrl+F5)
 - Check browser console for JavaScript errors (F12 → Console tab)
-- Verify API endpoints are responding: visit http://localhost:5000/api/test
+- Verify API endpoints are responding: visit http://localhost:5008/api/test
 
 **API returns empty data:**
 

@@ -2,6 +2,7 @@
 <!-- Programmer: Amna Ali | File: index.html -->
 <html lang="en">
   <head>
+    <script src="../static/api-config.js"></script>
     <meta charset="UTF-8" />
     <script>if(!sessionStorage.getItem("dfs_authenticated")){window.location.replace("login.html");}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -360,7 +361,7 @@
       async function loadOverviewData() {
         try {
           // First check pipeline state for a faster empty-state response
-          const stateRes = await fetch("/api/pipeline-state");
+          const stateRes = await window.apiFetch("/api/pipeline-state");
           const state = await stateRes.json();
 
           if (!state.latestUploadAt) {
@@ -369,7 +370,7 @@
             return;
           }
 
-          const res = await fetch("/api/overview-data");
+          const res = await window.apiFetch("/api/overview-data");
           const data = await res.json();
 
           if (!data.available) {

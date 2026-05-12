@@ -2,6 +2,7 @@
 <!-- Programmer: Amna Ali | File: predictions.html -->
 <html lang="en">
   <head>
+    <script src="../static/api-config.js"></script>
     <meta charset="UTF-8" />
     <script>if(!sessionStorage.getItem("dfs_authenticated")){window.location.replace("login.html");}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -244,7 +245,7 @@
         }
 
         try {
-          const response = await fetch("/api/pipeline-state");
+          const response = await window.apiFetch("/api/pipeline-state");
           const state = await response.json();
 
           if (!state || !state.success || !state.latestUploadAt) {
@@ -527,7 +528,7 @@
           model: "random-forest",
         });
 
-        fetch(`/api/predictions-data?${query.toString()}`)
+        window.apiFetch(`/api/predictions-data?${query.toString()}`)
           .then(async (response) => {
             const data = await response.json();
             if (!response.ok) {
@@ -767,7 +768,7 @@
       // Show idle state on page load to avoid loading python file on every click— user must click Generate Prediction. 
       (async () => {
         try {
-          const r = await fetch("/api/pipeline-state");
+          const r = await window.apiFetch("/api/pipeline-state");
           const state = await r.json();
           const banner = document.getElementById("predictionBlockBanner");
           const meta = document.getElementById("predictionMeta");

@@ -47,7 +47,7 @@ The system follows a **Client-Server Architecture** with clear separation of con
 ┌─────────────────────────────────────────────────────────────────┐
 │                    Backend (Server)                              │
 │  ┌──────────────────────────────────────────┐                  │
-│  │      Express.js Server (Port 5000)       │                  │
+│  │      Express.js Server (Port 5008)       │                  │
 │  │  ┌──────────────┐  ┌──────────────┐     │                  │
 │  │  │   API        │  │   File       │     │                  │
 │  │  │   Endpoints  │  │   Upload     │     │                  │
@@ -417,7 +417,7 @@ const multer = require("multer");
 const cors = require("cors");
 
 const app = express();
-const PORT = 5000;
+const PORT = 5008;
 
 // Middleware
 app.use(cors()); // Enable Cross-Origin requests from frontend
@@ -452,7 +452,7 @@ if (!fs.existsSync("datasets")) {
 
 **Purpose**: Fetch December 2025 predictions from best model
 
-**Request**: `GET http://localhost:5000/api/december-data`
+**Request**: `GET http://localhost:5008/api/december-data`
 
 **Response Structure**:
 
@@ -506,7 +506,7 @@ fetch("/api/december-data")
 
 **Purpose**: Fetch all model metrics for comparison page
 
-**Request**: `GET http://localhost:5000/api/comparison-data`
+**Request**: `GET http://localhost:5008/api/comparison-data`
 
 **Response Structure**:
 
@@ -584,7 +584,7 @@ fetch("/api/comparison-data")
 
 **Purpose**: Fetch best performing model details
 
-**Request**: `GET http://localhost:5000/api/best-model`
+**Request**: `GET http://localhost:5008/api/best-model`
 
 **Response Structure**:
 
@@ -1343,7 +1343,7 @@ document.getElementById("improvement").textContent = `${improvement.toFixed(
 └──────────────────────────────────────────────────────────────┘
                               ↕ HTTP (JSON)
 ┌──────────────────────────────────────────────────────────────┐
-│                    PORT 5000 (Backend)                       │
+│                    PORT 5008 (Backend)                       │
 │  Express Server Receives Request                             │
 │  ├─ Match route (e.g., /api/comparison-data)                │
 │  ├─ Read CSV files from disk                                │

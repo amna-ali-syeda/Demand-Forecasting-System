@@ -2,6 +2,7 @@
 <!-- Programmer: Amna Ali | File: upload.html -->
 <html lang="en">
   <head>
+    <script src="../static/api-config.js"></script>
     <meta charset="UTF-8" />
     <script>if(!sessionStorage.getItem("dfs_authenticated")){window.location.replace("login.html");}</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -516,7 +517,7 @@
         uploadLoadingText.textContent =
           "Training model on latest uploaded data, please wait...";
 
-        fetch("/api/train-model", { method: "POST" })
+        window.apiFetch("/api/train-model", { method: "POST" })
           .then((response) => response.json())
           .then((result) => {
             if (result.success) {
@@ -538,7 +539,7 @@
       });
 
       function loadLatestProcessedFile() {
-        fetch("/api/latest-processed-file")
+        window.apiFetch("/api/latest-processed-file")
           .then((r) => r.json())
           .then((data) => {
             if (!data.available) {
@@ -562,7 +563,7 @@
       }
 
       function loadPipelineState() {
-        fetch("/api/pipeline-state")
+        window.apiFetch("/api/pipeline-state")
           .then((r) => r.json())
           .then((data) => {
             retrainModelBtn.disabled = !data.success || !data.canTrain;
@@ -851,7 +852,7 @@
           formData.append("files", file);
         });
 
-        fetch("/api/upload", {
+        window.apiFetch("/api/upload", {
           method: "POST",
           body: formData,
         })

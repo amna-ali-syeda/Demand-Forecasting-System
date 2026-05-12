@@ -1,54 +1,90 @@
 #!/usr/bin/env node
 
-/**
- * Build script to inject API_BASE_URL into HTML templates
- * This runs on Vercel before serving static files
- */
+const fs = require("fs");
+const path = require("path");
 
-const fs = require('fs');
-const path = require('path');
+const ROOT_DIR = __dirname;
+const TEMPLATES_DIR = path.join(ROOT_DIR, "templates");
+const STATIC_DIR = path.join(ROOT_DIR, "static");
+const DIST_DIR = path.join(ROOT_DIR, "dist");
+const DIST_STATIC_DIR = path.join(DIST_DIR, "static");
 
-const API_BASE_URL = process.env.API_BASE_URL || 'http://localhost:5000';
+const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:5008";
 
-console.log(`Injecting API_BASE_URL: ${API_BASE_URL}`);
+function ensureDir(dirPath) {
+  fs.mkdirSync(dirPath, { recursive: true });
+}
 
-// Create or update api-config.js
-const configContent = `
-// Auto-generated at build time
-window.API_CONFIG = {
-  BASE_URL: '${API_BASE_URL}'
+function writeApiConfig(targetDir) {
+  ensureDir(targetDir);
+
+  const configContent = `window.API_CONFIG = {
+  BASE_URL: ${JSON.stringify(API_BASE_URL)}
 };
 
-// Helper function for API calls
-window.apiCall = async (endpoint, options = {}) => {
-  const url = window.API_CONFIG.BASE_URL + endpoint;
-  return fetch(url, options);
+window.resolveApiUrl = function resolveApiUrl(endpoint) {
+  const base = String(window.API_CONFIG.BASE_URL || "").replace(/\\/$/, "");
+  const path = String(endpoint || "");
+
+  if (!base) return path;
+  if (/^https?:\\/\\//i.test(path)) return path;
+
+  return base + (path.startsWith("/") ? path : "/" + path);
+};
+
+window.apiFetch = function apiFetch(endpoint, options) {
+  return fetch(window.resolveApiUrl(endpoint), options);
 };
 `;
 
-fs.writeFileSync(path.join(__dirname, 'static', 'api-config.js'), configContent);
-console.log('✓ Created static/api-config.js');
+  fs.writeFileSync(
+    path.join(targetDir, "api-config.js"),
+    configContent,
+    "utf8",
+  );
+}
 
-// Inject script tag into HTML templates
-const templatesDir = path.join(__dirname, 'templates');
-const templateFiles = fs.readdirSync(templatesDir).filter(f => f.endsWith('.html'));
+function transformHtml(html) {
+  let output = html.replace(
+    /<script src="\.\.\/static\/api-config\.js"><\/script>\s*/g,
+    "",
+  );
 
-templateFiles.forEach(file => {
-  const filePath = path.join(templatesDir, file);
-  let content = fs.readFileSync(filePath, 'utf8');
-  
-  // Check if api-config.js is already included
-  if (!content.includes('api-config.js')) {
-    // Insert the script tag after the opening <head> tag
-    content = content.replace(
-      '  <head>',
-      '  <head>\n    <script src="../static/api-config.js"></script>'
+  if (!output.includes("/static/api-config.js")) {
+    output = output.replace(
+      "<head>",
+      '  <head>\n    <script src="/static/api-config.js"></script>',
     );
-    fs.writeFileSync(filePath, content);
-    console.log(`✓ Updated ${file}`);
-  } else {
-    console.log(`✓ ${file} already has api-config.js`);
   }
-});
 
-console.log('Build complete!');
+  return output.replace(/\.\.\/static\//g, "/static/");
+}
+
+function copyTemplates() {
+  const templateFiles = fs
+    .readdirSync(TEMPLATES_DIR)
+    .filter((file) => file.endsWith(".html"));
+
+  templateFiles.forEach((file) => {
+    const sourcePath = path.join(TEMPLATES_DIR, file);
+    const destinationPath = path.join(DIST_DIR, file);
+    const content = fs.readFileSync(sourcePath, "utf8");
+    fs.writeFileSync(destinationPath, transformHtml(content), "utf8");
+  });
+}
+
+function build() {
+  console.log(`Building static frontend with API_BASE_URL=${API_BASE_URL}`);
+
+  fs.rmSync(DIST_DIR, { recursive: true, force: true });
+  ensureDir(DIST_DIR);
+  fs.cpSync(STATIC_DIR, DIST_STATIC_DIR, { recursive: true });
+
+  writeApiConfig(STATIC_DIR);
+  writeApiConfig(DIST_STATIC_DIR);
+  copyTemplates();
+
+  console.log("Static build complete: dist/");
+}
+
+build();

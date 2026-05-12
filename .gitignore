@@ -13,6 +13,7 @@ env/
 ENV/
 
 # Runtime data and generated files
+dist/
 datasets/uploaded_raw/
 datasets/preprocessed_without_weather/
 datasets/feature_engineered_dataset.csv

@@ -948,7 +948,7 @@ app.use((err, req, res, next) => {
 });
 
 if (require.main === module) {
-  const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5008;
   app.listen(PORT, () => {
     console.log(`\n=== SERVER STARTED ===`);
     console.log(`Node.js backend listening on http://localhost:${PORT}`);

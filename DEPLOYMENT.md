@@ -83,7 +83,7 @@ After initial deployment, go to Vercel dashboard:
 1. **Project Settings** → **Environment Variables**
 2. Add a new variable:
    - **Name**: `API_BASE_URL`
-   - **Value**: `https://your-backend-domain.com` (or `http://localhost:5000` for testing)
+   - **Value**: `https://your-backend-domain.com` (or `http://localhost:5008` for testing)
 3. Redeploy the project (Settings → Redeploy)
 
 ---
@@ -104,7 +104,7 @@ pip install -r requirements.txt
 npm start
 ```
 
-The backend will run on `http://localhost:5000`.
+The backend will run on `http://localhost:5008`.
 
 ### Option B: Deploy Backend to a Hosting Service
 
@@ -149,7 +149,7 @@ If you change your backend URL later:
 3. Redeploy (Settings → Redeploy)
 
 ### Locally (for testing):
-1. The build script uses `process.env.API_BASE_URL` or defaults to `http://localhost:5000`
+1. The build script uses `process.env.API_BASE_URL` or defaults to `http://localhost:5008`
 2. Run `npm run build` to regenerate `static/api-config.js`
 
 ---
@@ -226,7 +226,7 @@ app.use(cors());
 - `API_BASE_URL`: Backend server URL
 
 ### Your Server (Backend)
-- `PORT`: (optional) defaults to 5000
+- `PORT`: (optional) defaults to 5008
 - `PYTHON_EXECUTABLE`: (optional) path to Python binary
 
 ---
