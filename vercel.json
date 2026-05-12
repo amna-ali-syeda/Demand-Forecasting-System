@@ -1,38 +1,5 @@
 {
   "version": 2,
-  "rewrites": [
-    {
-      "source": "/static/:path*",
-      "destination": "/static/:path*"
-    },
-    {
-      "source": "/datasets/:path*",
-      "destination": "/datasets/:path*"
-    },
-    {
-      "source": "/modelPredictions/:path*",
-      "destination": "/modelPredictions/:path*"
-    },
-    {
-      "source": "/metrics/:path*",
-      "destination": "/metrics/:path*"
-    },
-    {
-      "source": "/visuals/:path*",
-      "destination": "/visuals/:path*"
-    },
-    {
-      "source": "/:path*",
-      "destination": "/server.js"
-    }
-  ],
-  "functions": {
-    "server.js": {
-      "memory": 1024,
-      "maxDuration": 30
-    }
-  },
-  "env": {
-    "PYTHON_EXECUTABLE": "/usr/bin/python3"
-  }
+  "buildCommand": "npm run build",
+  "public": "templates"
 }
